@@ -157,6 +157,7 @@ dependencies = [
 name = "ddns-remake"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "cloudflare",
  "public-ip-address",
  "serde",
