@@ -1,15 +1,29 @@
-[package]
-name = "ddns-remake"
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.metadata.crane]
+name = "ddns-remake-workspace"
+
+[workspace.package]
+authors = ["Derrick Lin <dlin12457@gmail.com>"]
 version = "0.1.0"
 edition = "2024"
+# repository = "https://github.com/user/project"
+# license = "MIT"
 
-[dependencies]
+[workspace.dependencies]
 anyhow = "1.0.102"
 async-trait = "0.1.89"
-cloudflare = "0.14.0"
-public-ip-address = "0.4.0"
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.18"
-tokio = { version = "1.50.0", features = ["macros", "rt-multi-thread", "tracing"] }
+tokio = { version = "1.50.0", features = [
+    "macros",
+    "rt-multi-thread",
+    "tracing",
+] }
 tracing = "0.1.44"
-tracing-subscriber = {version = "0.3.22",features = ["tracing", "env-filter"]}
+tracing-subscriber = { version = "0.3.22", features = [
+    "tracing",
+    "env-filter",
+] }

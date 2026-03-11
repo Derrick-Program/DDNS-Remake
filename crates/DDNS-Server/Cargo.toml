@@ -1,0 +1,13 @@
+[package]
+name = "ddns-server"
+version.workspace = true
+edition.workspace = true 
+
+[dependencies]
+cloudflare = "0.14.0"
+anyhow.workspace = true
+tokio.workspace = true
+async-trait.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

@@ -1,4 +1,3 @@
-mod core;
 mod providers;
 use anyhow::Result;
 use tracing::{debug, error, info};
