@@ -21,9 +21,12 @@ tokio = { version = "1.50.0", features = [
     "macros",
     "rt-multi-thread",
     "tracing",
+    "signal",
 ] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = [
     "tracing",
     "env-filter",
 ] }
+salvo = { version = "0.89.2", default-features = false}
+ddns-core = { path = "crates/DDNS-Core" }

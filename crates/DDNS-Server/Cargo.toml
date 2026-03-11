@@ -1,13 +1,22 @@
 [package]
 name = "ddns-server"
 version.workspace = true
-edition.workspace = true 
+edition.workspace = true
 
 [dependencies]
 cloudflare = "0.14.0"
+serde.workspace = true
+salvo = { workspace = true, features = [
+    "anyhow",
+    "affix-state",
+    "jwt-auth",
+    "logging",
+    "oapi",
+],default-features = true }
 anyhow.workspace = true
 tokio.workspace = true
 async-trait.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+ddns-core.workspace = true
