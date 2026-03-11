@@ -247,6 +247,7 @@
         apps = rec {
           ddns-server = flake-utils.lib.mkApp {drv = self.packages.${system}.ddns-server;};
           ddns-client = flake-utils.lib.mkApp {drv = self.packages.${system}.ddns-client;};
+          just = { type = "app"; program = "${pkgs.just}/bin/just"; };
           default = ddns-server;
         };
         devShells.default = pkgs.mkShell {
