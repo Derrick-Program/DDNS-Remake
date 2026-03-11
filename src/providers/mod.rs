@@ -5,8 +5,8 @@ use async_trait::async_trait;
 
 use crate::providers::cloudflare::CloudflareProvider;
 
-pub type DnsRecord = (String, String, Ipv4Addr);
-pub type ZoneInfo = (String, String);
+pub type DnsRecord = (String, String, Ipv4Addr); // (record_id, record_name, record_content)
+pub type ZoneInfo = (String, String); // (zone_id, zone_name)
 
 #[async_trait]
 pub trait ZoneHandler {
