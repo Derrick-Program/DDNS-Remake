@@ -264,6 +264,7 @@
             sccache
             mold
             clang
+            cargo-sort
           ];
           inherit (commonEnv) CC CXX OPENSSL_DIR OPENSSL_LIB_DIR OPENSSL_INCLUDE_DIR RUSTFLAGS;
           shellHook = ''
@@ -274,7 +275,7 @@
             export PATH="${pkgs.stdenv.cc}/bin:$PATH"
 
             echo "🚀 DDNS-Remake 開發環境已就緒"
-            echo "编译器: $(cc --version | head -n 1)"
+            echo "編譯器: $(cc --version | head -n 1)"
             echo "Rust: $(rustc --version)"
           '';
         };
