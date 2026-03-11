@@ -1,14 +1,10 @@
 mod providers;
+mod apis;
 use anyhow::Result;
 use salvo::oapi::swagger_ui::Url;
-// use tracing::{debug, error, info};
-// use std::collections::HashMap;
 use salvo::prelude::*;
-use salvo::{oapi::extract::*, server::ServerHandle};
-use serde::{Deserialize, Serialize};
-
+use salvo::{server::ServerHandle};
 use tokio::signal;
-use tracing::info;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 // use crate::providers::{DnsFactory, ProviderType};
@@ -43,7 +39,7 @@ async fn main() -> Result<()> {
     let acceptor = TcpListener::new("0.0.0.0:8698").bind().await;
     let v1_routers = Router::with_path("v1")
         .push(Router::with_path("hello").get(hello))
-        .push(Router::with_path("dns_records").post(create_user));
+        .push(Router::with_path("dns_records").post(apis::test::create_user));
     let doc_v1 = OpenApi::new("API V1", "1.0").merge_router(&v1_routers);
     let router = Router::new()
         .push(v1_routers)
@@ -103,24 +99,4 @@ async fn hello() -> &'static str {
 #[handler]
 async fn get_records() -> &'static str {
     "DNS Records"
-}
-
-#[derive(Deserialize, ToSchema, Debug)]
-struct CreateUserRequest {
-    username: String,
-    email: String,
-}
-
-#[derive(Serialize, ToSchema, Debug)]
-struct UserResponse {
-    id: u64,
-    username: String,
-    status: String,
-}
-
-#[endpoint]
-async fn create_user(new_user: JsonBody<CreateUserRequest>) -> Json<UserResponse> {
-    let user = new_user.into_inner();
-    info!("Creating user: {:#?}", user);
-    Json(UserResponse { id: 1, username: user.username, status: "created".to_string() })
 }
