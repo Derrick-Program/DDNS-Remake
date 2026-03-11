@@ -1,13 +1,13 @@
+mod core;
 mod providers;
-use std::{collections::HashMap, net::{IpAddr, Ipv4Addr}};
 use anyhow::Result;
+use std::collections::HashMap;
 
 use crate::providers::{DnsFactory, ProviderType};
 #[tokio::main]
 async fn main() -> Result<()> {
     let cf_token = "ad74vvoDGK0M3aE5Lzgzy8aZDZsXvaYvHP5p0Hfn";
     let zone_name = "duacodie.com";
-
 
     println!("Cloudflare Token: {}", cf_token);
     let cf_h = DnsFactory::create(ProviderType::Cloudflare, cf_token);
@@ -16,32 +16,16 @@ async fn main() -> Result<()> {
         println!("No zones found.");
         return Ok(());
     }
-    let zt: HashMap<String, String> = zones.into_iter().map(|(id, name)| (name,id)).collect();
-    // println!("Zones: {:#?}", zones);
+    let zt: HashMap<String, String> = zones.into_iter().map(|(id, name)| (name, id)).collect();
     println!("Zone Map: {:#?}", zt);
     match zt.get(zone_name) {
         Some(zone_id) => {
             println!("Zone ID for '{}': {}", zone_name, zone_id);
             let records = cf_h.list_records(zone_id, None).await?;
             println!("DNS Records for '{}': {:#?}", zone_name, records);
-            //TODO: fn (zone_id) 
+            //TODO: fn (zone_id)
         }
         None => println!("Zone '{}' not found.", zone_name),
     }
     Ok(())
-}
-
-#[allow(unused)]
-async fn get_public_ip() -> Result<Ipv4Addr> {
-    match public_ip_address::perform_lookup(None).await {
-        Ok(resp) => {
-            if let IpAddr::V4(ip) = resp.ip {
-                println!("Public IPv4 Address: {}", ip);
-                Ok(ip)
-            } else {
-                Err(anyhow::anyhow!("Received an unexpected IP type"))
-            }
-        },
-        Err(e) => Err(anyhow::anyhow!("Error occurred: {}", e)),
-    }
 }
