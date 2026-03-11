@@ -11,5 +11,6 @@ async fn main() -> Result<()> {
     tracing_subscriber::registry().with(filter_layer).with(stdout_layer).init();
     info!("Starting DDNS Client...");
     debug!("Client IP: {}", get_public_ip().await?);
+    //TODO: 發send request to server
     Ok(())
 }
