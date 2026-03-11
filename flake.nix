@@ -43,6 +43,8 @@
         src = craneLib.cleanCargoSource ./.;
         commonNativeBuildInputs = with pkgs; [
           pkg-config
+          clang
+          mold
         ];
         commonBuildInputs = with pkgs;
           [
@@ -125,6 +127,9 @@
               sqlx-cli
               nodejs_24
               pnpm
+              mold
+              clang
+              sccache
             ]
             ++ lib.optionals pkgs.stdenv.isDarwin [
               pkgs.libiconv
@@ -135,6 +140,9 @@
             export OPENSSL_DIR=${pkgs.openssl.dev}
             export OPENSSL_LIB_DIR=${pkgs.openssl.out}/lib
             export OPENSSL_INCLUDE_DIR=${pkgs.openssl.dev}/include
+            export RUSTFLAGS="-C link-arg=-fuse-ld=mold"
+            export RUSTC_WRAPPER=sccache
+            export SCCACHE_DIR="$PWD/.cache/sccache"
             echo "DevShell ready: rust=$(rustc --version), node=$(node --version), pnpm=$(pnpm --version)"
           '';
         };
