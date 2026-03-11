@@ -189,7 +189,7 @@
         commonNativeBuildInputs = with pkgs; [
           pkg-config
           clang
-          mold
+          # mold
           stdenv.cc
         ];
 
@@ -208,7 +208,7 @@
           OPENSSL_DIR = pkgs.openssl.dev;
           OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
           OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
-          RUSTFLAGS = "-C link-arg=-fuse-ld=mold";
+          # RUSTFLAGS = "-C link-arg=-fuse-ld=mold";
         };
         src = craneLib.cleanCargoSource (craneLib.path ./.);
         cargoArtifacts = craneLib.buildDepsOnly (commonEnv
@@ -265,7 +265,8 @@
             clang
             cargo-sort
           ];
-          inherit (commonEnv) CC CXX OPENSSL_DIR OPENSSL_LIB_DIR OPENSSL_INCLUDE_DIR RUSTFLAGS;
+          # inherit (commonEnv) CC CXX OPENSSL_DIR OPENSSL_LIB_DIR OPENSSL_INCLUDE_DIR RUSTFLAGS;
+          inherit (commonEnv) CC CXX OPENSSL_DIR OPENSSL_LIB_DIR OPENSSL_INCLUDE_DIR;
           shellHook = ''
             export RUST_BACKTRACE=1
             export RUST_SRC_PATH="${rustToolchain}/lib/rustlib/src/rust/library"
