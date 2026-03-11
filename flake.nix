@@ -183,7 +183,6 @@
           (builtins.filter (sdk: sdk != null) [
             apple-sdk_15
             apple-sdk_14
-            apple-sdk_13
             apple-sdk
           ]);
 
