@@ -1,3 +1,4 @@
+#![allow(unused)]
 pub mod cloudflare;
 use anyhow::Result;
 use std::net::Ipv4Addr;
