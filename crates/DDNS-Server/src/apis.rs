@@ -8,3 +8,9 @@ pub async fn create_user(new_user: JsonBody<CreateUserRequest>) -> Json<UserResp
     info!("Creating user: {:#?}", user);
     Json(UserResponse { id: 1, username: user.username, status: "created".to_string() })
 }
+
+#[endpoint]
+pub async fn hello() -> &'static str {
+    "Hello, World!"
+}
+//TODO: 添加API，獲取DNS紀錄，更新DNS紀錄，每個路由需要帶Auth token
