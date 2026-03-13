@@ -4,7 +4,7 @@ use tracing::debug;
 pub mod v1 {
     use super::*;
 
-    use ddns_core::r#in::UpdateDnsRecordRequest;
+    use ddns_core::{r#in::UpdateDnsRecordRequest, out::CommonResponse};
     use salvo::oapi::extract::{JsonBody, PathParam};
     use uuid::Uuid;
 
@@ -19,20 +19,63 @@ pub mod v1 {
     //TODO: 添加API，獲取DNS紀錄，更新DNS紀錄
 
     #[endpoint]
-    pub async fn get_dns_records() -> &'static str {
-        "Get DNS Records - Not Implemented"
+    pub async fn get_dns_records(res: &mut Response) {
+        res.status_code(StatusCode::NOT_IMPLEMENTED)
+            .render(Json(CommonResponse { message: "Not Implemented".into() }));
     }
 
     //TODO: 更新的時候需要檢查DNS name 是否與用戶綁定，並且檢查IP格式是否正確
     #[endpoint]
     pub async fn update_dns_record(
+        res: &mut Response,
         record_id: PathParam<Uuid>,
         data: JsonBody<UpdateDnsRecordRequest>,
-    ) -> &'static str {
+    ) {
         debug!("Received request to update DNS record with ID: {}", record_id);
         debug!("Request data.ip: {:?}", data.ip);
         // let data = data.into_inner();
-
-        "Update DNS Record - Not Implemented"
+        res.status_code(StatusCode::NOT_IMPLEMENTED)
+            .render(Json(CommonResponse { message: "Not Implemented".into() }));
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use salvo::test::TestClient;
+    use serde_json::json;
+    use uuid::Uuid;
+
+    #[tokio::test]
+    async fn test_update_dns_record_unauthorized() {
+        let router = v1::routers();
+        let record_id = Uuid::new_v4();
+        let service = Service::new(router);
+
+        let res = TestClient::patch(format!("http://127.0.0.1:8698/v1/dns_records/{}", record_id))
+            .json(&json!({ "ip": "1.1.1.1" }))
+            .send(&service)
+            .await;
+        assert_eq!(res.status_code.unwrap(), StatusCode::UNAUTHORIZED);
+    }
+
+    // #[tokio::test]
+    // async fn test_update_dns_record_not_implemented() {
+    //     let router = v1::routers();
+    //     let record_id = Uuid::new_v4();
+
+    //     // 模擬帶有 Token 的請求 (假設你的 validator 檢查某個 header)
+    //     let mut res =
+    //         TestClient::patch(format!("http://127.0.0.1:5800/v1/dns_records/{}", record_id))
+    //             .insert_header("Authorization", "Bearer valid_token")
+    //             .json(&json!({ "ip": "1.1.1.1" }))
+    //             .send(router)
+    //             .await;
+
+    //     // 目前你的實作回傳 NOT_IMPLEMENTED
+    //     assert_eq!(res.status_code.unwrap(), StatusCode::NOT_IMPLEMENTED);
+
+    //     let body: CommonResponse = res.parse_json().await.unwrap();
+    //     assert_eq!(body.message, "Not Implemented");
+    // }
 }
