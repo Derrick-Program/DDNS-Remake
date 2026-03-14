@@ -2,7 +2,7 @@ diesel::table! {
     users (id) {
         id -> Integer,
         username -> Text,
-        password_hash -> Text, // 管理介面用
+        password_hash -> Text,
     }
 }
 
@@ -10,8 +10,8 @@ diesel::table! {
     devices (id) {
         id -> Integer,
         user_id -> Integer,
-        device_identifier -> Text, // uuid 
-        token_hash -> Text,        // 設備 API 認證用的 Token
+        device_identifier -> Text,
+        token_hash -> Text,
         last_seen_ip -> Nullable<Text>,
         updated_at -> Timestamp,
     }
@@ -20,15 +20,14 @@ diesel::table! {
 diesel::table! {
     domains (id) {
         id -> Integer,
-        device_id -> Integer,      // 關聯到設備
-        hostname -> Text,          // 例如: "home.example.com"
+        device_id -> Integer,
+        hostname -> Text,
         current_ip -> Nullable<Text>,
         is_active -> Bool,
         updated_at -> Timestamp,
     }
 }
 
-// 定義關聯
 diesel::joinable!(devices -> users (user_id));
 diesel::joinable!(domains -> devices (device_id));
 
