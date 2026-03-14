@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::Result;
 use salvo::oapi::swagger_ui::Url;
 use salvo::prelude::*;
@@ -5,6 +7,11 @@ use salvo::server::ServerHandle;
 use tokio::signal;
 
 use crate::apis;
+
+#[allow(unused)]
+pub struct AppState {
+    pub db_service: crate::db::DbService,
+}
 
 async fn listen_shutdown_signal(handle: ServerHandle) {
     // Wait Shutdown Signal
@@ -37,10 +44,11 @@ async fn listen_shutdown_signal(handle: ServerHandle) {
     handle.stop_graceful(None);
 }
 
-pub async fn start_server() -> Result<()> {
+pub async fn start_server(app_state: AppState) -> Result<()> {
     let acceptor = TcpListener::new("0.0.0.0:8698").bind().await;
     let v1_routers = apis::v1::routers();
-    let mut router = Router::with_path("api");
+    let state = Arc::new(app_state);
+    let mut router = Router::with_path("api").hoop(salvo::affix_state::inject(state));
     if cfg!(debug_assertions) {
         let doc_v1 = OpenApi::new("API V1", "1.0").merge_router(&v1_routers);
         router = router.unshift(doc_v1.into_router("/docs/v1/openapi.json")).unshift(

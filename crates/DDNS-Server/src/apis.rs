@@ -1,6 +1,7 @@
 use crate::middleware::token_validator;
 use salvo::prelude::*;
 use tracing::debug;
+// web -> handler -> service -> db -> model
 pub mod v1 {
     use super::*;
 
