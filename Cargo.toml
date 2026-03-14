@@ -15,19 +15,13 @@ edition = "2024"
 [workspace.dependencies]
 anyhow = "1.0.102"
 async-trait = "0.1.89"
+chrono = { version = "0.4.44", features = ["serde"] }
+clap = { version = "4.6.0", features = ["derive"] }
 ddns-core = { path = "crates/DDNS-Core" }
+dotenvy = "0.15.7"
 salvo = { version = "0.89.2", default-features = false }
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.18"
-tokio = { version = "1.50.0", features = [
-    "macros",
-    "rt-multi-thread",
-    "tracing",
-    "signal",
-] }
+tokio = { version = "1.50.0", features = ["macros", "rt-multi-thread", "tracing", "signal"] }
 tracing = "0.1.44"
-tracing-subscriber = { version = "0.3.22", features = [
-    "tracing",
-    "env-filter",
-] }
-clap = { version = "4.6.0", features = ["derive"] }
+tracing-subscriber = { version = "0.3.22", features = ["tracing", "env-filter"] }

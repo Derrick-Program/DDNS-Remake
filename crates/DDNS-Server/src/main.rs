@@ -1,13 +1,24 @@
-mod providers;
 mod apis;
 mod cli;
-mod server;
 mod middleware;
+mod providers;
+mod schema;
+mod server;
+mod models;
 use anyhow::Result;
+use diesel::{Connection, SqliteConnection};
+use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
-
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 #[tokio::main]
 async fn main() -> Result<()> {
+    dotenvy::dotenv().ok();
+    let db_url = std::env::var("DATABASE_URL").expect("需設定 DATABASE_URL");
+    let mut conn = SqliteConnection::establish(&db_url)?;
+    println!("正在確認 SQLite 資料庫結構...");
+    conn.run_pending_migrations(MIGRATIONS)
+        .map_err(|e| anyhow::anyhow!("資料庫遷移失敗: {}", e))?;
+    println!("資料庫已就緒！");
     let stdout_layer = fmt::layer().with_target(true).with_thread_ids(true);
     let filter_layer =
         EnvFilter::try_from_default_env().or_else(|_| EnvFilter::try_new("info")).unwrap();
@@ -38,4 +49,3 @@ async fn main() -> Result<()> {
     server::start_server().await?;
     Ok(())
 }
-
