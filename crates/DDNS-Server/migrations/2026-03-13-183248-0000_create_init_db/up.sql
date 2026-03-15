@@ -12,7 +12,7 @@ CREATE TABLE `devices`(
 	`token_hash` TEXT NOT NULL,
 	`last_seen_ip` TEXT,
 	`updated_at` TIMESTAMP NOT NULL,
-	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_devices_device_identifier ON devices (device_identifier);
@@ -24,6 +24,6 @@ CREATE TABLE `domains`(
 	`current_ip` TEXT,
 	`is_active` BOOL NOT NULL,
 	`updated_at` TIMESTAMP NOT NULL,
-	FOREIGN KEY (`device_id`) REFERENCES `devices`(`id`)
+	FOREIGN KEY (`device_id`) REFERENCES `devices`(`id`) ON DELETE CASCADE
 );
 

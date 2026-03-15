@@ -7,13 +7,31 @@ mod providers;
 mod schema;
 mod server;
 use anyhow::Result;
-use diesel::{SqliteConnection, r2d2::{ConnectionManager, Pool}};
+use diesel::{
+    RunQueryDsl, SqliteConnection,
+    r2d2::{ConnectionManager, CustomizeConnection, Pool},
+    sql_query,
+};
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use tracing::{debug, info};
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 use crate::db::DbService;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
+#[derive(Debug)]
+pub struct SqliteCustomizer;
+
+impl CustomizeConnection<SqliteConnection, diesel::r2d2::Error> for SqliteCustomizer {
+    fn on_acquire(&self, conn: &mut SqliteConnection) -> Result<(), diesel::r2d2::Error> {
+        sql_query("PRAGMA foreign_keys = ON;")
+            .execute(conn)
+            .map_err(diesel::r2d2::Error::QueryError)?;
+
+        Ok(())
+    }
+
+    fn on_release(&self, _conn: SqliteConnection) {}
+}
 #[tokio::main]
 async fn main() -> Result<()> {
     let stdout_layer = fmt::layer().with_target(true).with_thread_ids(true);
@@ -27,17 +45,18 @@ async fn main() -> Result<()> {
     info!("Initializing database connection pool");
     let db_url = std::env::var("DATABASE_URL").expect("需設定 DATABASE_URL");
     let manager = ConnectionManager::<SqliteConnection>::new(db_url);
-    let pool = Pool::builder().build(manager)?;
+    let pool = Pool::builder().connection_customizer(Box::new(SqliteCustomizer)).build(manager)?;
     info!("Running database migrations");
     {
         let mut conn = pool.get()?;
-        conn.run_pending_migrations(MIGRATIONS).map_err(|e| anyhow::anyhow!("資料庫遷移失敗: {}", e))?;
+        conn.run_pending_migrations(MIGRATIONS)
+            .map_err(|e| anyhow::anyhow!("資料庫遷移失敗: {}", e))?;
     }
     debug!("Database connection pool established and migrations applied");
     debug!("Service dependencies initialized");
     let db_service = DbService::new(pool);
     let app_state = server::AppState { db_service };
-    
+
     // let cf_token = "ad74vvoDGK0M3aE5Lzgzy8aZDZsXvaYvHP5p0Hfn";
     // let zone_name = "duacodie.com";
     // info!("Starting DDNS Client");

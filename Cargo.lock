@@ -808,6 +808,7 @@ dependencies = [
  "serde_json",
  "sqlite-wasm-rs",
  "time",
+ "uuid",
 ]
 
 [[package]]
