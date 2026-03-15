@@ -7,6 +7,8 @@ mod providers;
 mod schema;
 mod server;
 use anyhow::Result;
+mod error;
+mod translate;
 use diesel::{
     RunQueryDsl, SqliteConnection,
     r2d2::{ConnectionManager, CustomizeConnection, Pool},

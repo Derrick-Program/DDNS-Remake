@@ -700,7 +700,8 @@ dependencies = [
 name = "ddns-core"
 version = "0.1.0"
 dependencies = [
- "salvo",
+ "chrono",
+ "salvo-oapi",
  "serde",
 ]
 
