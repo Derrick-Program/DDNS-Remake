@@ -1,7 +1,8 @@
-use nanoid::nanoid;
 use argon2::{
-    Argon2, PasswordHash, PasswordVerifier, password_hash::{PasswordHasher, SaltString, rand_core::OsRng}
+    Argon2, PasswordHash, PasswordVerifier,
+    password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
 };
+use nanoid::nanoid;
 
 fn generate_api_key() -> String {
     let token = nanoid!(45);
@@ -30,4 +31,22 @@ pub fn generate_and_print_api_key() {
     println!("Hashed API Key for DB storage: {}", db_token);
     let is_valid = verify_client_token(&db_token, &api_key);
     println!("Token verification result: {}", is_valid);
+    let host_uuid = uuid::Uuid::new_v4();
+    println!("Generated Host UUID: {}", host_uuid);
+}
+
+use clap::{Parser, Subcommand};
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None, propagate_version = true)]
+pub struct Cli {
+    #[command(flatten)]
+    pub verbosity: clap_verbosity_flag::Verbosity,
+    #[command(subcommand)]
+    pub command: Commands,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum Commands {
+    Run,
 }

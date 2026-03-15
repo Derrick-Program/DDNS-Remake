@@ -2,6 +2,8 @@
 name = "ddns-server"
 version.workspace = true
 edition.workspace = true
+authors.workspace = true
+description = "DDNS Server CLI"
 
 [dependencies]
 anyhow.workspace = true
@@ -9,6 +11,8 @@ argon2 = "0.5.3"
 async-trait.workspace = true
 chrono.workspace = true
 cloudflare = "0.14.0"
+clap.workspace = true
+clap-verbosity-flag.workspace = true 
 ddns-core.workspace = true
 diesel = { version = "2.3.7", features = ["sqlite", "serde_json", "chrono","r2d2","returning_clauses_for_sqlite_3_35","uuid"] }
 diesel_migrations = "2.3.1"

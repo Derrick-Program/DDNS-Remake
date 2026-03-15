@@ -13,7 +13,7 @@ pub enum AppError {
     DatabaseError(#[from] diesel::result::Error),
     #[error("連接池錯誤: {0}")]
     PoolError(#[from] diesel::r2d2::Error),
-    #[error("Device not found")]
+    #[error("裝置未找到")]
     DeviceNotFound,
     #[error("驗證失敗")]
     AuthenticationError,
@@ -33,48 +33,20 @@ pub enum AppError {
 #[async_trait]
 impl Writer for AppError {
     async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
-        match self {
-            AppError::DatabaseError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                res.render(Json(CommonResponse { message: format!("Database error: {}", e) }));
-            }
-            AppError::PoolError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                res.render(Json(CommonResponse {
-                    message: format!("Connection pool error: {}", e),
-                }));
-            }
-            AppError::DeviceNotFound => {
-                res.status_code(StatusCode::NOT_FOUND);
-                res.render(Json(CommonResponse { message: self.to_string() }));
-            }
-            AppError::AuthenticationError => {
-                res.status_code(StatusCode::UNAUTHORIZED);
-                res.render(Json(CommonResponse { message: self.to_string() }));
-            }
-            AppError::AuthorizationError => {
-                res.status_code(StatusCode::FORBIDDEN);
-                res.render(Json(CommonResponse { message: self.to_string() }));
-            }
-            AppError::NotFound => {
-                res.status_code(StatusCode::NOT_FOUND);
-                res.render(Json(CommonResponse { message: self.to_string() }));
-            }
-            AppError::InvalidInput(e) => {
-                res.status_code(StatusCode::BAD_REQUEST);
-                res.render(Json(CommonResponse { message: format!("Invalid input: {}", e) }));
-            }
-            AppError::InternalServerError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                res.render(Json(CommonResponse {
-                    message: format!("Internal server error: {}", e),
-                }));
-            }
-            AppError::Anyhow(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                res.render(Json(CommonResponse { message: e.to_string() }));
-            }
-        }
+        let status = match self {
+            AppError::DatabaseError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::PoolError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::DeviceNotFound => StatusCode::NOT_FOUND,
+            AppError::AuthenticationError => StatusCode::UNAUTHORIZED,
+            AppError::AuthorizationError => StatusCode::FORBIDDEN,
+            AppError::NotFound => StatusCode::NOT_FOUND,
+            AppError::InvalidInput(_) => StatusCode::BAD_REQUEST,
+            AppError::InternalServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::Anyhow(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+
+        res.status_code(status);
+        res.render(Json(CommonResponse { message: self.to_string() }));
     }
 }
 

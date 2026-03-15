@@ -17,6 +17,7 @@ anyhow = "1.0.102"
 async-trait = "0.1.89"
 chrono = { version = "0.4.44", features = ["serde"] }
 clap = { version = "4.6.0", features = ["derive"] }
+clap-verbosity-flag = {version = "3.0.4", features = ["tracing"] }
 ddns-core = { path = "crates/DDNS-Core" }
 dotenvy = "0.15.7"
 salvo = { version = "0.89.2", default-features = false }

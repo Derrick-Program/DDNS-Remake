@@ -5,7 +5,11 @@ info:
 
 http:
   method: GET
-  url: "{{base}}/dns_records"
+  url: "{{base}}/dns_records/:device_id"
+  params:
+    - name: device_id
+      value: bac8c9e4-5d65-48c9-96f9-408ddd4d45ab
+      type: path
   auth:
     type: bearer
     token: "{{api}}"

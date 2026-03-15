@@ -3,4 +3,4 @@ variables:
   - name: base
     value: http://127.0.0.1:8698/api/v1
   - name: api
-    value: ddns_tok_TeoPv7gXw2Zuj_FOebv8_92HM4mhqwMlqg0X7Jgm7DgTr
+    value: ddns_tok_jYCvMvxicd3iic4dGBVaXiVZql3AhQ29M2FgDiMrr5CRh

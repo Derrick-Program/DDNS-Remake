@@ -38,9 +38,11 @@ pub mod v1 {
             .map_err(|_| anyhow::anyhow!("Failed to obtain AppState from Depot"))?;
         let mut db_service = app_state.db_service.clone();
         let h_id = host_uuid.into_inner().to_string();
+        debug!("Extracted host_uuid: {}", h_id);
         let dev_data =
             db_service.find_by_device_identifier(&h_id)?.ok_or(AppError::DeviceNotFound)?;
         let domains = db_service.find_active_domains_by_device_id(dev_data.id)?;
+        debug!("Found {} active domains for device_id {}", domains.len(), dev_data.id);
         Ok(Json(GetDnsRecordsResponse {
             domains: domains.into_iter().map(WebDomain::from).collect(),
         }))
