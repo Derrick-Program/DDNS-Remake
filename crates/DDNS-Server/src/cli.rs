@@ -35,18 +35,60 @@ pub fn generate_and_print_api_key() {
     println!("Generated Host UUID: {}", host_uuid);
 }
 
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None, propagate_version = true)]
+#[command(author, version, about = "DDNS Server 管理工具", long_about = None, propagate_version = true)]
 pub struct Cli {
     #[command(flatten)]
-    pub verbosity: clap_verbosity_flag::Verbosity,
+    pub verbosity: clap_verbosity_flag::Verbosity<clap_verbosity_flag::InfoLevel>,
+    #[arg(short, long, default_value = "config.toml")]
+    pub config: String,
     #[command(subcommand)]
     pub command: Commands,
 }
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    Run,
+    /// 啟動伺服器
+    Start {
+        /// 指定監聽埠號
+        #[arg(short, long, default_value_t = 8080)]
+        port: u16,
+    },
+    /// 設定檔相關操作
+    Config(ConfigArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct ConfigArgs {
+    #[command(subcommand)]
+    pub action: ConfigSubcommands,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum ConfigSubcommands {
+    /// 產生預設設定檔
+    Generate {
+        /// 是否覆蓋現有檔案
+        #[arg(short, long)]
+        force: bool,
+        /// 輸出的格式 (如: toml, json, yaml)
+        #[arg(short, long, default_value = "toml")]
+        format: String,
+    },
+    /// 檢查設定檔是否正確
+    Check,
+}
+
+#[derive(Args,Debug)]
+pub struct DbArgs {
+    #[command(subcommand)]
+    pub action: DbSubcommands,
+
+}
+
+#[derive(Subcommand, Debug)]
+pub enum DbSubcommands {
+    
 }

@@ -19,7 +19,7 @@ use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use tracing::{debug, info};
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
-use crate::{cli::Commands, db::DbService};
+use crate::{cli::{Commands, ConfigSubcommands}, db::DbService};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 #[derive(Debug)]
 pub struct SqliteCustomizer;
@@ -42,7 +42,6 @@ async fn main() -> Result<()> {
     let filter_layer = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new(cli.verbosity.to_string()));
     tracing_subscriber::registry().with(filter_layer).with(stdout_layer).init();
-    dbg!(&cli);
     info!("DDNS Server is initializing...");
     debug!("Read .env file");
     dotenvy::dotenv().ok();
@@ -83,15 +82,19 @@ async fn main() -> Result<()> {
     //     }
     //     None => error!("Zone '{}' not found.", zone_name),
     // }
-    // cli::generate_and_print_api_key();
-    // info!("Starting DDNS Server");
-    // server::start_server(app_state).await?;
-    match cli.command {
-        Commands::Run => {
-            tracing::warn!("這是只有在 -v 時才會看到的 warn 訊息");
-            tracing::info!("這是只有在 -vv, 正在執行 Run 子指令...");
-            tracing::debug!("這是只有在 -vvv 時才會看到的 debug 訊息");
-            tracing::trace!("這是只有在 -vvvv 時才會看到的 trace 訊息");
+    match &cli.command {
+        Commands::Config(config_args) => match &config_args.action {
+            ConfigSubcommands::Generate { force, format } => {
+                println!("正在產生 {} 格式的設定檔 (強制覆蓋: {})", format, force);
+            }
+            ConfigSubcommands::Check => {
+                println!("正在檢查設定檔：{}", cli.config);
+            }
+        },
+        Commands::Start { port } => {
+            println!("伺服器正在埠號 {} 啟動...", port);
+            info!("Starting DDNS Server");
+            server::start_server(app_state).await?;
         }
     }
     Ok(())

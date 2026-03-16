@@ -5,6 +5,7 @@ use salvo::oapi::swagger_ui::Url;
 use salvo::prelude::*;
 use salvo::server::ServerHandle;
 use tokio::signal;
+use tracing::debug;
 
 use crate::apis;
 
@@ -61,7 +62,7 @@ pub async fn start_server(app_state: AppState) -> Result<()> {
         );
     }
     router = router.push(v1_routers);
-    println!("{router:?}");
+    debug!("{router:?}");
     let server = Server::new(acceptor);
     let handle = server.handle();
     tokio::spawn(listen_shutdown_signal(handle));

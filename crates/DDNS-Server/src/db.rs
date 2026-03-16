@@ -64,14 +64,14 @@ impl DbService {
         let device = diesel::insert_into(devices).values(&new_device).get_result(&mut conn)?;
         Ok(device)
     }
-    
+
     pub fn find_by_device_identifier(&mut self, ident: &str) -> Result<Option<Device>> {
         let mut conn = self.pool.get()?;
         let result =
             devices.filter(device_identifier.eq(ident)).first::<Device>(&mut conn).optional()?;
         Ok(result)
     }
-    
+
     pub fn get_device_all_domains(&mut self, devs: &[Device]) -> Result<Vec<Vec<Domain>>> {
         let mut conn = self.pool.get()?;
         let domains_list = Domain::belonging_to(devs)
@@ -80,7 +80,7 @@ impl DbService {
         let grouped_domains = domains_list.grouped_by(devs);
         Ok(grouped_domains)
     }
-    
+
     //Domain operations
     pub fn create_domain(&mut self, dev_id: i32, host: &str, is_a: bool) -> Result<Domain> {
         let mut conn = self.pool.get()?;
@@ -93,7 +93,7 @@ impl DbService {
         let domain = diesel::insert_into(domains).values(&new_domain).get_result(&mut conn)?;
         Ok(domain)
     }
-    
+
     pub fn find_active_domains_by_device_id(&mut self, dev_id: i32) -> Result<Vec<Domain>> {
         let mut conn = self.pool.get()?;
         let results = domains
@@ -221,7 +221,7 @@ mod tests {
         let domain = service.create_domain(device.id, "example.com", true)?;
         assert_eq!(domain.device_id, device.id);
         assert_eq!(domain.hostname, "example.com");
-        assert_eq!(domain.is_active, true);
+        assert!(domain.is_active);
         Ok(())
     }
 
