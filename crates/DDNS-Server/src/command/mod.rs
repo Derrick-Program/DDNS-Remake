@@ -1,5 +1,5 @@
 mod server;
-mod utils;
+pub mod utils;
 use std::{net::SocketAddr, sync::Arc};
 
 use crate::{

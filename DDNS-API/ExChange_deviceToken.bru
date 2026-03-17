@@ -1,0 +1,15 @@
+meta {
+  name: ExChange_deviceToken
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{auth}}/exchange
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

@@ -10,7 +10,7 @@ pub fn routers() -> Router {
     //TODO: 目前先實作設備調用的API，所以需要帶上設備的token
     Router::with_path("v1").hoop(token_validator).push(
         Router::with_path("dns_records")
-            .push(Router::with_path("{host_uuid}").get(self::get_dns_records))
+            .push(Router::with_path("{deviceid}").get(self::get_dns_records))
             .push(Router::with_path("{record_id}").patch(self::update_dns_record)),
     )
 }
@@ -21,15 +21,15 @@ pub fn routers() -> Router {
 #[endpoint]
 pub async fn get_dns_records(
     depod: &mut Depot,
-    host_uuid: PathParam<Uuid>,
+    deviceid: PathParam<Uuid>, //UUID v5
 ) -> AppResult<Json<GetDnsRecordsResponse>> {
     debug!("Received request to get DNS records");
     let app_state = depod
         .obtain::<Arc<crate::command::AppState>>()
         .map_err(|_| anyhow::anyhow!("Failed to obtain AppState from Depot"))?;
     let mut db_service = app_state.db_service.clone();
-    let h_id = host_uuid.into_inner().to_string();
-    debug!("Extracted host_uuid: {}", h_id);
+    let h_id = deviceid.into_inner().to_string();
+    debug!("Extracted deviceid: {}", h_id);
     let dev_data = db_service.find_by_device_identifier(&h_id)?.ok_or(AppError::DeviceNotFound)?;
     let domains = db_service.find_active_domains_by_device_id(dev_data.id)?;
     debug!("Found {} active domains for device_id {}", domains.len(), dev_data.id);

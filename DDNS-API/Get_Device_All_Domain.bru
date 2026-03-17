@@ -1,0 +1,20 @@
+meta {
+  name: Get_Device_All_Domain
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{v1_dns}}/:host_uuid
+  body: none
+  auth: inherit
+}
+
+params:path {
+  host_uuid: 63657b4c-e60c-42c7-b77b-0c68e7d53038
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

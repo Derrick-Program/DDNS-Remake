@@ -8,6 +8,17 @@ pub struct CommonResponse {
     pub message: String,
 }
 
+#[derive(Deserialize, ToSchema, Debug)]
+pub struct LoginRequest {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Serialize, ToSchema, Debug)]
+pub struct TokenResponse {
+    pub token: String,
+}
+
 // 進入Server的module，定義從外部接收的資料結構
 #[derive(Deserialize, ToSchema, Debug)]
 pub struct UpdateDnsRecordRequest {

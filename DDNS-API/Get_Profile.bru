@@ -1,0 +1,16 @@
+meta {
+  name: Get_Profile
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{auth}}/profile
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
