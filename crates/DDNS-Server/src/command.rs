@@ -6,7 +6,6 @@ use crate::{
 };
 use anyhow::Result;
 use tracing::info;
-use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 pub enum CommandResult {
     Continue,
@@ -19,10 +18,6 @@ pub struct AppState {
 }
 
 pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
-    let stdout_layer = fmt::layer().with_target(true).with_thread_ids(true);
-    let filter_layer = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new(cli.verbosity.to_string()));
-    tracing_subscriber::registry().with(filter_layer).with(stdout_layer).init();
     match &cli.command {
         Commands::Exit => Ok(CommandResult::Exit),
 
@@ -33,6 +28,12 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
                 }
                 ConfigSubcommands::Check => {
                     println!("正在檢查設定檔：{}", cli.config);
+                }
+                ConfigSubcommands::Get { key } => {
+                    println!("正在獲取設定檔中的值，key: {}", key);
+                }
+                ConfigSubcommands::Set { key, value } => {
+                    println!("正在設定設定檔中的值，key: {}, value: {}", key, value);
                 }
             }
             Ok(CommandResult::Continue)

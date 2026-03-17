@@ -41,6 +41,25 @@ impl CustomizeConnection<SqliteConnection, diesel::r2d2::Error> for SqliteCustom
 
     fn on_release(&self, _conn: SqliteConnection) {}
 }
+
+use tracing_subscriber::{EnvFilter, fmt, prelude::*};
+
+fn init_tracing(verbosity: &str) -> Result<()> {
+    let stdout_layer = fmt::layer()
+        .with_target(true)
+        .with_thread_ids(true);
+
+    let filter_layer = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new(verbosity));
+
+    tracing_subscriber::registry()
+        .with(filter_layer)
+        .with(stdout_layer)
+        .try_init()?;
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
@@ -56,10 +75,12 @@ async fn main() -> Result<()> {
     let ctx = Arc::new(command::AppState { db_service });
     if std::env::args_os().len() > 1 {
         let cli = cli::Cli::parse();
+        init_tracing(&cli.verbosity.to_string())?;
         match handle(cli, &ctx).await? {
             CommandResult::Continue | CommandResult::Exit => {}
         }
     } else {
+        init_tracing("info")?;
         repl::run(&ctx).await?;
     }
     

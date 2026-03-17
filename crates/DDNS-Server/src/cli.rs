@@ -84,6 +84,13 @@ pub enum ConfigSubcommands {
         #[arg(short, long, default_value = "toml")]
         format: String,
     },
+    Get {
+        key: String,
+    },
+    Set {
+        key: String,
+        value: String,
+    },
     /// 檢查設定檔是否正確
     Check,
 }
