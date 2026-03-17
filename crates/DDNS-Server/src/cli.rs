@@ -1,3 +1,5 @@
+use std::net::Ipv4Addr;
+
 use argon2::{
     Argon2, PasswordHash, PasswordVerifier,
     password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
@@ -53,11 +55,16 @@ pub enum Commands {
     /// 啟動伺服器
     Start {
         /// 指定監聽埠號
-        #[arg(short, long, default_value_t = 8080)]
+        #[arg(short, long, default_value_t = 8698)]
         port: u16,
+        #[arg(short = 'H', long, default_value_t = Ipv4Addr::LOCALHOST)]
+        host: Ipv4Addr,
     },
     /// 設定檔相關操作
     Config(ConfigArgs),
+    /// 資料庫相關操作
+    Database(DbArgs),
+    Exit,
 }
 
 #[derive(Args, Debug)]
@@ -81,14 +88,11 @@ pub enum ConfigSubcommands {
     Check,
 }
 
-#[derive(Args,Debug)]
+#[derive(Args, Debug)]
 pub struct DbArgs {
     #[command(subcommand)]
     pub action: DbSubcommands,
-
 }
 
 #[derive(Subcommand, Debug)]
-pub enum DbSubcommands {
-    
-}
+pub enum DbSubcommands {}

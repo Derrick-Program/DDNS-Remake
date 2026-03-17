@@ -34,7 +34,7 @@ pub mod v1 {
     ) -> AppResult<Json<GetDnsRecordsResponse>> {
         debug!("Received request to get DNS records");
         let app_state = depod
-            .obtain::<Arc<crate::server::AppState>>()
+            .obtain::<Arc<crate::command::AppState>>()
             .map_err(|_| anyhow::anyhow!("Failed to obtain AppState from Depot"))?;
         let mut db_service = app_state.db_service.clone();
         let h_id = host_uuid.into_inner().to_string();

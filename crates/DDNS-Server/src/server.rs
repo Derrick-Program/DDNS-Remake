@@ -1,3 +1,4 @@
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -8,11 +9,8 @@ use tokio::signal;
 use tracing::debug;
 
 use crate::apis;
+use crate::command::AppState;
 
-#[allow(unused)]
-pub struct AppState {
-    pub db_service: crate::db::DbService,
-}
 
 async fn listen_shutdown_signal(handle: ServerHandle) {
     // Wait Shutdown Signal
@@ -45,10 +43,9 @@ async fn listen_shutdown_signal(handle: ServerHandle) {
     handle.stop_graceful(None);
 }
 
-pub async fn start_server(app_state: AppState) -> Result<()> {
-    let acceptor = TcpListener::new("0.0.0.0:8698").bind().await;
+pub async fn start_server(state: Arc<AppState>, sl: SocketAddr) -> Result<()> {
+    let acceptor = TcpListener::new(sl).bind().await;
     let v1_routers = apis::v1::routers();
-    let state = Arc::new(app_state);
     let mut router = Router::with_path("api").hoop(salvo::affix_state::inject(state));
     if cfg!(debug_assertions) {
         let doc_v1 = OpenApi::new("API V1", "1.0").merge_router(&v1_routers);
