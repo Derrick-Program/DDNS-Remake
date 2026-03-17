@@ -64,6 +64,10 @@ pub enum Commands {
     Config(ConfigArgs),
     /// 資料庫相關操作
     Database(DbArgs),
+    
+    ///Server相關操作
+    Server(ServerArgs),
+    /// 退出應用程式
     Exit,
 }
 
@@ -103,3 +107,62 @@ pub struct DbArgs {
 
 #[derive(Subcommand, Debug)]
 pub enum DbSubcommands {}
+
+#[derive(Args, Debug)]
+pub struct ServerArgs {
+    #[command(subcommand)]
+    pub action: ServerSubcommands,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum ServerSubcommands {
+    ///產生API Key到選擇的地方（如: 輸出到終端、儲存到檔案）
+    GenerateApiKey {
+        #[arg(short, long)]
+        username: String,
+        #[arg(short, long, default_value = "toml")]
+        output: Option<String>,
+    },
+    /// 列出所有使用者
+    ListUsers,
+    /// 新增使用者
+    AddUser {
+        #[arg(short, long)]
+        username: String,
+        #[arg(short, long)]
+        password: Option<String>,
+    },
+    /// 移除使用者
+    RemoveUser {
+        #[arg(short, long)]
+        username: String,
+    },
+    /// 列出所有裝置
+    ListDevices,
+    /// 新增裝置
+    AddDevice {
+        #[arg(short, long)]
+        device_name: String,
+        #[arg(short, long)]
+        owner_username: String,
+    },
+    /// 移除裝置
+    RemoveDevice {
+        #[arg(short, long)]
+        device_name: String,
+    },
+    /// 列出所有裝置綁定的域名
+    ListDomains,
+    /// 新增裝置綁定的域名
+    AddDomain {
+        #[arg(short, long)]
+        device_name: String,
+        #[arg(short, long)]
+        domain_name: String,
+    },
+    /// 移除裝置綁定的域名
+    RemoveDomain {
+        #[arg(short, long)]
+        domain_name: String,
+    },
+}
