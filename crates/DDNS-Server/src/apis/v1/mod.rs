@@ -8,7 +8,7 @@ pub fn routers() -> Router {
     //TODO: 這裡的路由需要區分使用者調用與設備調用
     //TODO: 之後再擴充使用者可以登入的話，才需要驗證使用者的password
     //TODO: 目前先實作設備調用的API，所以需要帶上設備的token
-    Router::with_path("v1").push(
+    Router::with_path("v1").hoop(token_validator).push(
         Router::with_path("dns_records")
             .push(Router::with_path("{host_uuid}").get(self::get_dns_records))
             .push(Router::with_path("{record_id}").patch(self::update_dns_record)),
@@ -37,6 +37,7 @@ pub async fn get_dns_records(
 }
 
 //TODO: 更新的時候需要檢查DNS name 是否與用戶綁定，並且檢查IP格式是否正確
+/// 更新DNS紀錄，根據record_id來更新對應的紀錄
 #[endpoint]
 pub async fn update_dns_record(
     res: &mut Response,
