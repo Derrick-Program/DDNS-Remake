@@ -1,8 +1,9 @@
+mod server;
+mod utils;
 use std::{net::SocketAddr, sync::Arc};
 
 use crate::{
-    cli::{Cli, Commands, ConfigSubcommands, ServerSubcommands},
-    server,
+    parser::cli::{Cli, Commands, ConfigSubcommands, ServerSubcommands},
 };
 use anyhow::Result;
 use tracing::info;

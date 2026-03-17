@@ -1,13 +1,11 @@
 mod apis;
-mod cli;
+mod parser;
 mod command;
 mod db;
-mod middleware;
+mod middlewares;
 mod models;
 mod providers;
-mod repl;
 mod schema;
-mod server;
 
 use std::sync::Arc;
 
@@ -74,14 +72,14 @@ async fn main() -> Result<()> {
     let db_service = DbService::new(pool);
     let ctx = Arc::new(command::AppState { db_service });
     if std::env::args_os().len() > 1 {
-        let cli = cli::Cli::parse();
+        let cli = parser::cli::Cli::parse();
         init_tracing(&cli.verbosity.to_string())?;
         match handle(cli, &ctx).await? {
             CommandResult::Continue | CommandResult::Exit => {}
         }
     } else {
         init_tracing("info")?;
-        repl::run(&ctx).await?;
+        parser::repl::run(&ctx).await?;
     }
     
 

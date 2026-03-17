@@ -5,7 +5,7 @@ use clap::Parser;
 use rustyline::DefaultEditor;
 use rustyline::error::ReadlineError;
 
-use crate::cli::Cli;
+use super::cli::Cli;
 use crate::command::{AppState, CommandResult, handle};
 
 fn parse_repl_line(input: &str) -> Result<Cli, String> {
