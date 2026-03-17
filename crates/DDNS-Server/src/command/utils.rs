@@ -4,6 +4,7 @@ use argon2::{
     password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
 };
 use nanoid::nanoid;
+use uuid::Uuid;
 
 pub fn generate_api_key() -> String {
     let token = nanoid!(45);
@@ -23,6 +24,15 @@ pub fn verify_client_token(db_hash: &str, provided_token: &str) -> bool {
     };
     let argon2 = Argon2::default();
     argon2.verify_password(provided_token.as_bytes(), &parsed_hash).is_ok()
+}
+const MY_SYSTEM_NAMESPACE: Uuid = uuid::uuid!("c2139751-7d74-4ae1-b413-54c0155ea5aa");
+
+fn get_device_id() -> Result<Uuid, String> {
+    let machine_id_string =
+        machine_uid::get().map_err(|e| format!("無法獲取系統 Machine ID: {:?}", e))?;
+
+    let device_uuid = Uuid::new_v5(&MY_SYSTEM_NAMESPACE, machine_id_string.as_bytes());
+    Ok(device_uuid)
 }
 
 pub fn generate_and_print_api_key() {

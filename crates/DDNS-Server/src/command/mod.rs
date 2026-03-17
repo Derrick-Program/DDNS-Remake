@@ -1,9 +1,10 @@
 mod server;
+mod start;
 pub mod utils;
 use std::{net::SocketAddr, sync::Arc};
 
 use crate::{
-    parser::cli::{Cli, Commands, ConfigSubcommands, ServerSubcommands},
+    command, parser::cli::{Cli, Commands, ConfigSubcommands, ServerSubcommands}
 };
 use anyhow::Result;
 use tracing::info;
@@ -25,7 +26,7 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
 
         Commands::Config(config_args) => {
             match &config_args.action {
-                ConfigSubcommands::Generate { force, format } => {
+                ConfigSubcommands::Generate { force } => {
                     // println!("正在產生 {} 格式的設定檔 (強制覆蓋: {})", format, force);
                     unimplemented!("ConfigSubcommands::Generate 還未實作");
                 }
@@ -48,7 +49,7 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
         Commands::Start { port, host } => {
             info!("Starting DDNS Server");
             let sl = SocketAddr::new((*host).into(), *port);
-            server::start_server(ctx.clone(), sl).await?;
+            start::start_server(ctx.clone(), sl).await?;
             Ok(CommandResult::Continue)
         }
 
@@ -58,9 +59,8 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
         }
         Commands::Server(server_args) => {
             match &server_args.action {
-                ServerSubcommands::GenerateApiKey { username, output } => {
-                    println!("正在產生新的 API Key...");
-                    unimplemented!("ServerSubcommands::GenerateApiKey 還未實作");
+                ServerSubcommands::GenerateApiKey { username } => {
+                    command::server::generate_api_key(username);
                 }
                 ServerSubcommands::ListUsers => {
                     println!("正在列出所有使用者...");

@@ -48,4 +48,5 @@ uuid = { version = "1.22.0", features = [
     "v5",
     "macro-diagnostics",
 ] }
-jsonwebtoken = {version = "10.3.0",features = ["rust_crypto"]}
+jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
+machine-uid = "0.5.4"

@@ -7,11 +7,15 @@ meta {
 get {
   url: {{v1_dns}}/:host_uuid
   body: none
-  auth: inherit
+  auth: bearer
 }
 
 params:path {
   host_uuid: 63657b4c-e60c-42c7-b77b-0c68e7d53038
+}
+
+auth:bearer {
+  token: ddns_tok_X2c1Q5fpHAuaPyGujm4lFqUFAVcvST4YhMajTwjVoXRMA
 }
 
 settings {

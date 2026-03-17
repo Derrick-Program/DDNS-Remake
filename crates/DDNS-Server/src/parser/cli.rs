@@ -47,9 +47,6 @@ pub enum ConfigSubcommands {
         /// 是否覆蓋現有檔案
         #[arg(short, long)]
         force: bool,
-        /// 輸出的格式 (如: toml, json, yaml)
-        #[arg(short, long, default_value = "toml")]
-        format: String,
     },
     Get {
         key: String,
@@ -83,8 +80,6 @@ pub enum ServerSubcommands {
     GenerateApiKey {
         #[arg(short, long)]
         username: String,
-        #[arg(short, long, default_value = "toml")]
-        output: Option<String>,
     },
     /// 列出所有使用者
     ListUsers,
