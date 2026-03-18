@@ -30,6 +30,12 @@ impl DbService {
         Ok(user)
     }
 
+    pub fn get_all_users(&mut self) -> Result<Vec<String>> {
+        let mut conn = self.pool.get()?;
+        let all_users = users.select(username).load::<(String)>(&mut conn)?;
+        Ok(all_users)
+    }
+
     pub fn find_user_by_username(&mut self, in_name: &str) -> Result<Option<User>> {
         let mut conn = self.pool.get()?;
         let result = users.filter(username.eq(in_name)).first::<User>(&mut conn).optional()?;

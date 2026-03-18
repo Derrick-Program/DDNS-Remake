@@ -4,7 +4,8 @@ pub mod utils;
 use std::{net::SocketAddr, sync::Arc};
 
 use crate::{
-    command, parser::cli::{Cli, Commands, ConfigSubcommands, ServerSubcommands}
+    command,
+    parser::cli::{Cli, Commands, ConfigSubcommands, ServerSubcommands},
 };
 use anyhow::Result;
 use tracing::info;
@@ -60,22 +61,30 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
         Commands::Server(server_args) => {
             match &server_args.action {
                 ServerSubcommands::GenerateApiKey { username } => {
-                    command::server::generate_api_key(username);
+                    //TODO: 要先檢查使用者是否存在，之後在將產出的deviceKey寫入device資料庫
+                    command::server::generate_api_key(username, ctx)?;
                 }
                 ServerSubcommands::ListUsers => {
-                    println!("正在列出所有使用者...");
-                    unimplemented!("ServerSubcommands::ListUsers 還未實作");
+                    command::server::list_users(ctx)?;
                 }
                 ServerSubcommands::AddUser { username, password } => {
-                    println!("正在新增使用者，username: {}, password: {:#?}", username, password);
-                    unimplemented!("ServerSubcommands::AddUser 還未實作");
+                    let password = match password {
+                        Some(p) => p.to_string(),
+                        None => {
+                            print!("請輸入密碼: ");
+                            use std::io::{self, Write};
+                            io::stdout().flush()?;
+                            rpassword::read_password()?
+                        }
+                    };
+                    command::server::add_user(username, &password, ctx)?;
                 }
                 ServerSubcommands::RemoveUser { username } => {
-                    println!("正在移除使用者，username: {}", username);
-                    unimplemented!("ServerSubcommands::RemoveUser 還未實作");
+                    command::server::remove_user(username, ctx)?;
                 }
                 ServerSubcommands::ListDevices => {
                     println!("正在列出所有裝置...");
+                    //TODO: 將在Device table 中的裝置全部列出來
                     unimplemented!("ServerSubcommands::ListDevices 還未實作");
                 }
                 ServerSubcommands::AddDomain { device_name, domain_name } => {
@@ -83,6 +92,7 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
                         "正在新增裝置綁定的域名，device_name: {}, domain_name: {}",
                         device_name, domain_name
                     );
+                    //TODO: 將輸入的裝置名稱及域名做檢查之後寫入
                     unimplemented!("ServerSubcommands::AddDomain 還未實作");
                 }
                 ServerSubcommands::RemoveDomain { domain_name } => {
