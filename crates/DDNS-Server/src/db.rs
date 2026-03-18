@@ -43,9 +43,16 @@ impl DbService {
     }
 
     pub fn delete_user_by_username(&mut self, in_name: &str) -> Result<usize> {
+        //TODO: 添加使用者檢查，不要寫在外面
         let mut conn = self.pool.get()?;
         let count = diesel::delete(users.filter(username.eq(in_name))).execute(&mut conn)?;
         Ok(count)
+    }
+
+    pub fn get_all_devices(&mut self) -> Result<Vec<String>> {
+        let mut conn = self.pool.get()?;
+        let all_devices = devices.select(device_name).load::<(String)>(&mut conn)?;
+        Ok(all_devices)
     }
 
     pub fn get_user_all_devices(&mut self, u_s: &[User]) -> Result<Vec<Vec<Device>>> {
@@ -56,15 +63,21 @@ impl DbService {
         let grouped_devices = devices_list.grouped_by(u_s);
         Ok(grouped_devices)
     }
-
     //Device operations
-    pub fn create_device(&mut self, u_name: &str, d_id: Uuid, t_hash: String) -> Result<Device> {
+    pub fn create_device(
+        &mut self,
+        u_name: &str,
+        d_id: Uuid,
+        d_name: String,
+        t_hash: String,
+    ) -> Result<Device> {
         let user = self.find_user_by_username(u_name)?.ok_or(anyhow::anyhow!("User not found"))?;
         let mut conn = self.pool.get()?;
         let new_device = NewDevice {
             user_id: user.id,
             device_identifier: d_id.to_string(),
             token_hash: t_hash,
+            device_name: d_name,
             updated_at: chrono::Utc::now().naive_utc(),
         };
         let device = diesel::insert_into(devices).values(&new_device).get_result(&mut conn)?;

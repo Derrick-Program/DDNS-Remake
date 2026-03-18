@@ -62,6 +62,7 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
             match &server_args.action {
                 ServerSubcommands::GenerateApiKey { username } => {
                     //TODO: 要先檢查使用者是否存在，之後在將產出的deviceKey寫入device資料庫
+                    //TODO: 這裡可能就是當測試時使用，因為正式的時候沒有需要手動產生
                     command::server::generate_api_key(username, ctx)?;
                 }
                 ServerSubcommands::ListUsers => {
@@ -83,9 +84,7 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
                     command::server::remove_user(username, ctx)?;
                 }
                 ServerSubcommands::ListDevices => {
-                    println!("正在列出所有裝置...");
-                    //TODO: 將在Device table 中的裝置全部列出來
-                    unimplemented!("ServerSubcommands::ListDevices 還未實作");
+                    command::server::list_device(ctx)?;
                 }
                 ServerSubcommands::AddDomain { device_name, domain_name } => {
                     println!(

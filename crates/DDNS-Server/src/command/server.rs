@@ -62,3 +62,28 @@ pub fn remove_user(username: &str, ctx: &Arc<AppState>) -> Result<CommandResult>
     }
     Ok(CommandResult::Continue)
 }
+
+pub fn list_device(ctx: &Arc<AppState>) -> Result<CommandResult> {
+    let mut table = Table::new();
+    table
+        .load_preset(UTF8_FULL)
+        .apply_modifier(UTF8_ROUND_CORNERS)
+        .set_content_arrangement(ContentArrangement::Dynamic)
+        .set_width(40)
+        .set_header(vec!["DeviceName"]);
+    let mut db = ctx.db_service.clone();
+    let all_devices = db.get_all_devices()?;
+    for device in &all_devices {
+        table.add_row(vec![device.to_string()]);
+    }
+    info!("顯示所有裝置表格\n{table}");
+    Ok(CommandResult::Continue)
+}
+
+pub fn add_device(
+    device_name: &str,
+    owner_name: &str,
+    ctx: &Arc<AppState>,
+) -> Result<CommandResult> {
+    Ok(CommandResult::Continue)
+}

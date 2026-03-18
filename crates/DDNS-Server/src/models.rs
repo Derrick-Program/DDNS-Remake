@@ -24,6 +24,7 @@ pub struct Device {
     pub id: i32,
     pub user_id: i32,
     pub device_identifier: String,
+    pub device_name: String,
     pub token_hash: String,
     pub last_seen_ip: Option<String>,
     pub updated_at: NaiveDateTime,
@@ -34,6 +35,7 @@ pub struct Device {
 pub struct NewDevice {
     pub user_id: i32,
     pub device_identifier: String,
+    pub device_name: String,
     pub token_hash: String,
     pub updated_at: NaiveDateTime,
 }

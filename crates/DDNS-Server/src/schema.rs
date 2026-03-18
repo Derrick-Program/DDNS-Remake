@@ -5,6 +5,7 @@ diesel::table! {
         id -> Integer,
         user_id -> Integer,
         device_identifier -> Text,
+        device_name -> Text,
         token_hash -> Text,
         last_seen_ip -> Nullable<Text>,
         updated_at -> Timestamp,
