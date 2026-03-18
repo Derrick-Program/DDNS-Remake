@@ -6,5 +6,5 @@
 - [ ] send request to server, ex. Update DNS
 - [ ] Daemon mode
 ### Server
-- [ ] create API server with `salvo` crate
+- [x] create API server with `salvo` crate
 - [ ] create Manage CLI tools
