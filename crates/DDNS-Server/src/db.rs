@@ -194,7 +194,12 @@ mod tests {
         let mut service = setup_test_service();
         let user = service.create_user("test_user", "password_hash")?;
         let device_iden = Uuid::new_v4();
-        let device = service.create_device("test_user", device_iden, "tokenhash".into())?;
+        let device = service.create_device(
+            "test_user",
+            device_iden,
+            "test_device".into(),
+            "tokenhash".into(),
+        )?;
         assert_eq!(device.user_id, user.id);
         assert_eq!(device.device_identifier, device_iden.to_string());
         assert_eq!(device.token_hash, "tokenhash");
@@ -206,7 +211,12 @@ mod tests {
         let mut service = setup_test_service();
         let device_iden = Uuid::new_v4();
         service.create_user("test_user", "password_hash")?;
-        service.create_device("test_user", device_iden, "tokenhash".into())?;
+        service.create_device(
+            "test_user",
+            device_iden,
+            "test_device".into(),
+            "tokenhash".into(),
+        )?;
         let result = service.find_by_device_identifier(&device_iden.to_string())?;
         assert!(result.is_some());
         let device = result.unwrap();
@@ -219,7 +229,12 @@ mod tests {
         let mut service = setup_test_service();
         let device_iden = Uuid::new_v4();
         let user = service.create_user("test_user", "password_hash")?;
-        let device = service.create_device("test_user", device_iden, "tokenhash".into())?;
+        let device = service.create_device(
+            "test_user",
+            device_iden,
+            "test_device".into(),
+            "tokenhash".into(),
+        )?;
         let users_list = {
             let mut conn = service.pool.get()?;
             users.load::<User>(&mut conn)?
@@ -236,7 +251,12 @@ mod tests {
         let mut service = setup_test_service();
         let device_iden = Uuid::new_v4();
         let user = service.create_user("test_user", "password_hash")?;
-        let device = service.create_device("test_user", device_iden, "tokenhash".into())?;
+        let device = service.create_device(
+            "test_user",
+            device_iden,
+            "test_device".into(),
+            "tokenhash".into(),
+        )?;
         let domain = service.create_domain(device.id, "example.com", true)?;
         assert_eq!(domain.device_id, device.id);
         assert_eq!(domain.hostname, "example.com");
@@ -249,7 +269,12 @@ mod tests {
         let mut service = setup_test_service();
         let device_iden = Uuid::new_v4();
         let user = service.create_user("test_user", "password_hash")?;
-        let device = service.create_device("test_user", device_iden, "tokenhash".into())?;
+        let device = service.create_device(
+            "test_user",
+            device_iden,
+            "test_device".into(),
+            "tokenhash".into(),
+        )?;
         service.create_domain(device.id, "example.com", true)?;
         service.create_domain(device.id, "inactive.com", false)?;
         let active_domains = service.find_active_domains_by_device_id(device.id)?;
@@ -263,7 +288,12 @@ mod tests {
         let mut service = setup_test_service();
         let device_iden = Uuid::new_v4();
         let user = service.create_user("test_user", "password_hash")?;
-        let device = service.create_device("test_user", device_iden, "tokenhash".into())?;
+        let device = service.create_device(
+            "test_user",
+            device_iden,
+            "test_device".into(),
+            "tokenhash".into(),
+        )?;
         let domain1 = service.create_domain(device.id, "example.com", true)?;
         let domain2 = service.create_domain(device.id, "inactive.com", false)?;
         let devices_list = {
