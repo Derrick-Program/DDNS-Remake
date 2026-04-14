@@ -851,8 +851,10 @@ name = "ddns-core"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "machine-uid",
  "salvo-oapi",
  "serde",
+ "uuid",
 ]
 
 [[package]]

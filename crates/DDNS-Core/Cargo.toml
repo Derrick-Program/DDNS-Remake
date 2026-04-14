@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 chrono.workspace = true
+machine-uid.workspace = true
 # salvo = { workspace = true, features = ["oapi"] }
 salvo-oapi = "0.89.2"
 serde.workspace = true
+uuid.workspace = true
