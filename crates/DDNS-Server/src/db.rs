@@ -84,6 +84,41 @@ impl DbService {
         Ok(device)
     }
 
+    pub fn find_device_by_name_and_user_id(&mut self, u_id: i32, name: &str) -> Result<Option<Device>> {
+        let mut conn = self.pool.get()?;
+        let result = devices
+            .filter(user_id.eq(u_id).and(device_name.eq(name)))
+            .first::<Device>(&mut conn)
+            .optional()?;
+        Ok(result)
+    }
+
+    pub fn create_device_by_user_id(
+        &mut self,
+        u_id: i32,
+        d_id: Uuid,
+        d_name: String,
+        t_hash: String,
+    ) -> Result<Device> {
+        let mut conn = self.pool.get()?;
+        let new_device = NewDevice {
+            user_id: u_id,
+            device_identifier: d_id.to_string(),
+            device_name: d_name,
+            token_hash: t_hash,
+            updated_at: chrono::Utc::now().naive_utc(),
+        };
+        let device = diesel::insert_into(devices).values(&new_device).get_result(&mut conn)?;
+        Ok(device)
+    }
+
+    pub fn delete_device_by_name_and_user_id(&mut self, u_id: i32, name: &str) -> Result<usize> {
+        let mut conn = self.pool.get()?;
+        let count = diesel::delete(devices.filter(user_id.eq(u_id).and(device_name.eq(name))))
+            .execute(&mut conn)?;
+        Ok(count)
+    }
+
     pub fn find_by_device_identifier(&mut self, ident: &str) -> Result<Option<Device>> {
         let mut conn = self.pool.get()?;
         let result =

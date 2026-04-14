@@ -1,7 +1,7 @@
-use crate::command::utils::verify_client_token;
+use crate::command::utils::{generate_api_key, hash_token, verify_client_token};
 use crate::error::{AppError, AppResult};
 use crate::middlewares::user::{JwtClaims, get_secret, jwt_middleware};
-use ddns_core::{CommonResponse, LoginRequest, RegisterDeviceRequest, TokenResponse};
+use ddns_core::{CommonResponse, LoginRequest, RegisterDeviceRequest, RegisterDeviceResponse, TokenResponse};
 use jsonwebtoken::{EncodingKey, Header, encode};
 use salvo::oapi::extract::{JsonBody, PathParam};
 use salvo::prelude::*;
@@ -69,18 +69,65 @@ pub async fn is_login(depot: &mut Depot) -> Json<CommonResponse> {
 
 #[endpoint]
 pub async fn register_device(
-    _depot: &mut Depot,
+    depot: &mut Depot,
     data: JsonBody<RegisterDeviceRequest>,
-) -> AppResult<Json<TokenResponse>> {
-    tracing::debug!("Received request to register device with name: {}", data.device_name);
-    Err(AppError::NotImplemented("register_device 還未實作".into()))
+) -> AppResult<Json<RegisterDeviceResponse>> {
+    let claims = depot
+        .jwt_auth_data::<JwtClaims>()
+        .ok_or(AppError::AuthenticationError)?;
+    let uid = claims.claims.uid;
+    let req = data.into_inner();
+    let device_name = req.device_name;
+    debug!("User {} registering device '{}'", uid, device_name);
+
+    let app_state = depot
+        .obtain::<Arc<crate::command::AppState>>()
+        .map_err(|_| anyhow::anyhow!("Failed to obtain AppState from Depot"))?;
+    let mut db_service = app_state.db_service.clone();
+
+    let device_uuid = uuid::Uuid::parse_str(&req.device_id)
+        .map_err(|_| AppError::InvalidInput("device_id 不是合法的 UUID".into()))?;
+
+    if db_service.find_device_by_name_and_user_id(uid, &device_name)?.is_some() {
+        return Err(AppError::ResourceConflict);
+    }
+    if db_service.find_by_device_identifier(&device_uuid.to_string())?.is_some() {
+        return Err(AppError::ResourceConflict);
+    }
+
+    let api_key = generate_api_key();
+    let token_hash = hash_token(&api_key);
+
+    db_service.create_device_by_user_id(uid, device_uuid, device_name.clone(), token_hash)?;
+
+    Ok(Json(RegisterDeviceResponse {
+        device_name,
+        device_id: device_uuid.to_string(),
+        api_key,
+    }))
 }
 
 #[endpoint]
 pub async fn delete_device(
-    _depot: &mut Depot,
+    depot: &mut Depot,
     device_name: PathParam<String>,
 ) -> AppResult<Json<CommonResponse>> {
-    tracing::debug!("Received request to delete device with name: {}", device_name);
-    Err(AppError::NotImplemented("delete_device 還未實作".into()))
+    let claims = depot
+        .jwt_auth_data::<JwtClaims>()
+        .ok_or(AppError::AuthenticationError)?;
+    let uid = claims.claims.uid;
+    let name = device_name.into_inner();
+    debug!("User {} deleting device '{}'", uid, name);
+
+    let app_state = depot
+        .obtain::<Arc<crate::command::AppState>>()
+        .map_err(|_| anyhow::anyhow!("Failed to obtain AppState from Depot"))?;
+    let mut db_service = app_state.db_service.clone();
+
+    let deleted = db_service.delete_device_by_name_and_user_id(uid, &name)?;
+    if deleted == 0 {
+        return Err(AppError::NotFound);
+    }
+
+    Ok(Json(CommonResponse { message: format!("裝置 {} 已移除", name) }))
 }
