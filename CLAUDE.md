@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 每次對話開始時【強制執行】
+
+**每次新對話啟動，Claude 必須：**
+1. 讀取 `.claude/rule/TODO.md`
+2. 向使用者顯示目前 Sprint 進度與尚未完成的任務清單
+3. 詢問使用者今天想優先處理哪一項
+
+這是不可省略的開場流程，目的是督促開發進度。
+
 ## Project Overview
 
 DDNS Remake is a Rust workspace implementing a Dynamic DNS system with three crates:
