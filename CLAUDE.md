@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 1. 讀取 `.claude/rule/TODO.md`
 2. 向使用者顯示目前 Sprint 進度與尚未完成的任務清單
 3. 詢問使用者今天想優先處理哪一項
+4. 如果使用者請你修改完成之後需要回來調整TODO.md，或是使用者自己改完之後會跟你說"已改完"的時候，你需要你幫檢查之後同樣修改TODO.md
 
 這是不可省略的開場流程，目的是督促開發進度。
 

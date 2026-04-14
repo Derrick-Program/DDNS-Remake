@@ -1,11 +1,12 @@
-use crate::command::utils::generate_api_key;
-use crate::error::AppResult;
+use crate::command::utils::{generate_api_key, verify_client_token};
+use crate::error::{AppError, AppResult};
 use crate::middlewares::user::{JwtClaims, get_secret, jwt_middleware};
 use ddns_core::{CommonResponse, LoginRequest, TokenResponse};
 use jsonwebtoken::{EncodingKey, Header, encode};
 use salvo::oapi::extract::JsonBody;
 use salvo::prelude::*;
 use salvo::{Router, oapi::endpoint};
+use std::sync::Arc;
 use tracing::debug;
 
 pub fn routers() -> Router {
@@ -18,17 +19,31 @@ pub fn routers() -> Router {
 }
 
 #[endpoint]
-pub async fn login(data: JsonBody<LoginRequest>) -> Json<TokenResponse> {
-    //TODO: 這裡應該要驗證使用者的帳密，並且從資料庫中取出對應的使用者資訊來生成JWT token
+pub async fn login(
+    depot: &mut Depot,
+    data: JsonBody<LoginRequest>,
+) -> AppResult<Json<TokenResponse>> {
     let login_data = data.into_inner();
     debug!("Received login request for username: {}", login_data.username);
-    let user_id = 9527; //TODO: 這裡應該從資料庫中取出對應的使用者ID
-    let username = login_data.username;
+
+    let app_state = depot
+        .obtain::<Arc<crate::command::AppState>>()
+        .map_err(|_| anyhow::anyhow!("Failed to obtain AppState from Depot"))?;
+    let mut db_service = app_state.db_service.clone();
+
+    let user = db_service
+        .find_user_by_username(&login_data.username)?
+        .ok_or(AppError::AuthenticationError)?;
+
+    if !verify_client_token(&user.password_hash, &login_data.password) {
+        return Err(AppError::AuthenticationError);
+    }
+
     let exp = chrono::Utc::now().timestamp() + 300; // token 5分鐘後過期
-    let claims = JwtClaims { uid: user_id, username: username.to_string(), exp };
+    let claims = JwtClaims { uid: user.id, username: user.username, exp };
     let token =
         encode(&Header::default(), &claims, &EncodingKey::from_secret(get_secret())).unwrap();
-    Json(TokenResponse { token })
+    Ok(Json(TokenResponse { token }))
 }
 
 #[endpoint]
