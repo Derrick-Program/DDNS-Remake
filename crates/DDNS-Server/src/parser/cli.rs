@@ -25,9 +25,6 @@ pub enum Commands {
     },
     /// 設定檔相關操作
     Config(ConfigArgs),
-    /// 資料庫相關操作
-    Database(DbArgs),
-    
     ///Server相關操作
     Server(ServerArgs),
     /// 退出應用程式
@@ -58,15 +55,6 @@ pub enum ConfigSubcommands {
     /// 檢查設定檔是否正確
     Check,
 }
-
-#[derive(Args, Debug)]
-pub struct DbArgs {
-    #[command(subcommand)]
-    pub action: DbSubcommands,
-}
-
-#[derive(Subcommand, Debug)]
-pub enum DbSubcommands {}
 
 #[derive(Args, Debug)]
 pub struct ServerArgs {

@@ -82,10 +82,6 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
             Ok(CommandResult::Continue)
         }
 
-        Commands::Database(db_args) => {
-            println!("資料庫相關操作: {:#?}", db_args);
-            Ok(CommandResult::Continue)
-        }
         Commands::Server(server_args) => {
             match &server_args.action {
                 ServerSubcommands::GenerateApiKey { username } => {
