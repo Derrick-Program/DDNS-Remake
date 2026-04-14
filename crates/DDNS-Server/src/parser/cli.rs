@@ -7,7 +7,9 @@ use clap::{Args, Parser, Subcommand};
 pub struct Cli {
     #[command(flatten)]
     pub verbosity: clap_verbosity_flag::Verbosity<clap_verbosity_flag::InfoLevel>,
-    #[arg(short, long, default_value = "config.toml")]
+    /// 設定檔路徑（也可透過 DDNS_CONFIG 環境變數指定）
+    #[arg(short, long, env = "DDNS_CONFIG",
+          default_value_t = crate::config::default_config_path().to_string_lossy().into_owned())]
     pub config: String,
     #[command(subcommand)]
     pub command: Commands,
@@ -45,15 +47,32 @@ pub enum ConfigSubcommands {
         #[arg(short, long)]
         force: bool,
     },
+    /// 讀取指定設定值
     Get {
         key: String,
     },
+    /// 設定指定設定值
     Set {
         key: String,
         value: String,
     },
     /// 檢查設定檔是否正確
     Check,
+    /// 列出所有已設定的 DNS Zone
+    ZoneList,
+    /// 新增一個 DNS Zone（如 duacodie.com）
+    ZoneAdd {
+        /// Zone 名稱，例如 duacodie.com
+        name: String,
+        /// 預先填入的 Cloudflare Zone ID（選填，留空則在更新時自動查詢）
+        #[arg(long)]
+        zone_id: Option<String>,
+    },
+    /// 移除一個 DNS Zone
+    ZoneRemove {
+        /// Zone 名稱
+        name: String,
+    },
 }
 
 #[derive(Args, Debug)]
