@@ -1,0 +1,16 @@
+meta {
+  name: Is_Login
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{auth}}/is_login
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

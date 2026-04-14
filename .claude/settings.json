@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs ls:*)",
+      "Bash(git log:*)",
+      "Bash(ls -la crates/DDNS-Server/migrations/*/up.sql)",
+      "Bash(cargo test:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -Rs '{\"systemMessage\": (\"📋 DDNS-Remake 開發 TODO 提醒\\n\\n\" + .)}' .claude/rule/TODO.md",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

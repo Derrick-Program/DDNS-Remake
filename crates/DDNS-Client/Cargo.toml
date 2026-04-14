@@ -4,10 +4,11 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-public-ip-address = "0.4.0"
 anyhow.workspace = true
-tokio.workspace = true
 async-trait.workspace = true
+ddns-core.workspace = true
+public-ip-address = "0.4.0"
 thiserror.workspace = true
+tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

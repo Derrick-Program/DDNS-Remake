@@ -1,0 +1,26 @@
+meta {
+  name: Delete-Device
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{auth}}/devices/:device_name
+  body: none
+  auth: inherit
+}
+
+params:path {
+  device_name: test-device
+}
+
+body:json {
+  {
+    
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -15,15 +15,40 @@ edition = "2024"
 [workspace.dependencies]
 anyhow = "1.0.102"
 async-trait = "0.1.89"
+chrono = { version = "0.4.44", features = ["serde"] }
+clap = { version = "4.6.0", features = ["derive"] }
+clap-verbosity-flag = { version = "3.0.4", features = ["tracing"] }
+ddns-core = { path = "crates/DDNS-Core" }
+dotenvy = "0.15.7"
+keyring = { version = "3.6.3", features = [
+    "apple-native",
+    "async-secret-service",
+    "crypto-rust",
+    "linux-native-async-persistent",
+    "tokio",
+    "windows-nativev",
+] }
+salvo = { version = "0.89.2", default-features = false }
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.18"
 tokio = { version = "1.50.0", features = [
     "macros",
     "rt-multi-thread",
     "tracing",
+    "signal",
 ] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = [
     "tracing",
     "env-filter",
 ] }
+uuid = { version = "1.22.0", features = [
+    "serde",
+    "v4",
+    "v5",
+    "macro-diagnostics",
+] }
+jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
+machine-uid = "0.5.4"
+comfy-table = "7.2.2"
+rpassword = "7.4.0"

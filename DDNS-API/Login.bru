@@ -1,0 +1,31 @@
+meta {
+  name: Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{auth}}/login
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "username": "derrick",
+    "password": "12345678"
+  }
+}
+
+script:post-response {
+  const data = res.getBody();
+  if (data.token) {
+    bru.setVar("jwt_token", data.token);
+    console.log("Token 已成功更新至變數！");
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
