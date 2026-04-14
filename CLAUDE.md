@@ -12,12 +12,13 @@ DDNS Remake is a Rust workspace implementing a Dynamic DNS system with three cra
 ## Build & Run
 
 ```bash
-cargo build                          # Debug build (all crates)
-cargo build --release                # Release build
+just build-server          # Release build (ddns-server, default --release)
+just build-client          # Release build (ddns-client, default --release)
+just build-server --debug  # Debug build
 
-cargo run -p ddns-server             # Interactive REPL mode
-cargo run -p ddns-server -- start    # Start HTTP server (default: 127.0.0.1:8698)
-cargo run -p ddns-client             # Run client
+just run-server            # Interactive REPL mode
+just run-server start      # Start HTTP server (default: 127.0.0.1:8698)
+just run-client            # Run client
 ```
 
 ## Testing
@@ -41,8 +42,11 @@ cargo fmt
 ## Database Migrations
 
 ```bash
-diesel migration run     # Apply pending
-diesel migration revert  # Revert last
+just migration-run              # Apply pending
+just migration-revert           # Revert last
+just migration-redo             # Revert then re-apply
+just migration-generate <name>  # Generate new migration
+just migration-list             # List all migrations
 ```
 
 Migrations are embedded into the binary via `diesel_migrations!` and run automatically on startup. The `.env` file at the workspace root sets `DATABASE_URL`.
