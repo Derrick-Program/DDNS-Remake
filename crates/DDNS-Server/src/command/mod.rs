@@ -7,6 +7,7 @@ use crate::{
     command,
     parser::cli::{Cli, Commands, ConfigSubcommands, ServerSubcommands},
 };
+use comfy_table::{ContentArrangement, Table, modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL};
 use anyhow::Result;
 use tracing::{error, info};
 
@@ -28,10 +29,10 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
         Commands::Exit => Ok(CommandResult::Exit),
 
         Commands::Config(config_args) => {
+            let path = cli.config.as_str();
             match &config_args.action {
                 ConfigSubcommands::Generate { force } => {
-                    let path = &cli.config;
-                    if !*force && Path::new(path).exists() {
+                    if !force && Path::new(path).exists() {
                         error!("設定檔 '{}' 已存在，使用 --force 強制覆蓋", path);
                         return Ok(CommandResult::Continue);
                     }
@@ -40,7 +41,6 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
                     info!("已產生預設設定檔: {}", path);
                 }
                 ConfigSubcommands::Check => {
-                    let path = &cli.config;
                     match crate::config::AppConfig::load(path) {
                         Err(e) => error!("設定檔 '{}' 讀取失敗: {}", path, e),
                         Ok(config) => {
@@ -65,11 +65,43 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
                     }
                 }
                 ConfigSubcommands::Set { key, value } => {
-                    let path = &cli.config;
                     let mut config = crate::config::AppConfig::load_or_default(path);
                     config.set_value(key, value)?;
                     config.save(path)?;
                     info!("已設定 {} = {}", key, value);
+                }
+                ConfigSubcommands::ZoneList => {
+                    let mut table = Table::new();
+                    table
+                        .load_preset(UTF8_FULL)
+                        .apply_modifier(UTF8_ROUND_CORNERS)
+                        .set_content_arrangement(ContentArrangement::Dynamic)
+                        .set_header(vec!["Zone Name", "Zone ID"]);
+                    for zone in &ctx.config.zones {
+                        table.add_row(vec![
+                            zone.name.clone(),
+                            zone.zone_id.clone().unwrap_or_else(|| "(auto)".to_string()),
+                        ]);
+                    }
+                    info!("已設定的 DNS Zone：\n{table}");
+                }
+                ConfigSubcommands::ZoneAdd { name, zone_id } => {
+                    let mut config = crate::config::AppConfig::load_or_default(path);
+                    if config.add_zone(name, zone_id.clone()) {
+                        config.save(path)?;
+                        info!("已新增 Zone '{}'", name);
+                    } else {
+                        error!("Zone '{}' 已存在", name);
+                    }
+                }
+                ConfigSubcommands::ZoneRemove { name } => {
+                    let mut config = crate::config::AppConfig::load_or_default(path);
+                    if config.remove_zone(name) {
+                        config.save(path)?;
+                        info!("已移除 Zone '{}'", name);
+                    } else {
+                        error!("Zone '{}' 不存在", name);
+                    }
                 }
             }
             Ok(CommandResult::Continue)

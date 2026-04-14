@@ -82,11 +82,13 @@ async fn main() -> Result<()> {
         }
     } else {
         init_tracing("info")?;
-        let config = config::AppConfig::load_or_default("config.toml");
+        let config_path = std::env::var("DDNS_CONFIG")
+            .unwrap_or_else(|_| config::default_config_path().to_string_lossy().into_owned());
+        let config = config::AppConfig::load_or_default(&config_path);
         let ctx = Arc::new(command::AppState {
             db_service,
             config,
-            config_path: "config.toml".to_string(),
+            config_path,
         });
         parser::repl::run(&ctx).await?;
     }
