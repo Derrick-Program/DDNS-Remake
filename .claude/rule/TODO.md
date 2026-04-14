@@ -7,7 +7,7 @@
 | 模組 | 完成度 | 狀態 |
 |------|--------|------|
 | DDNS-Server (DB + ORM) | ~90% | 穩固 |
-| DDNS-Server (Auth API) | ~60% | Login 已修復，Token Validator 待修 |
+| DDNS-Server (Auth API) | ~80% | Login + Token Validator 已修復，暫用 X-Device-ID header |
 | DDNS-Server (DNS API) | ~30% | PATCH 未實作 |
 | DDNS-Server (CLI Commands) | ~40% | 多數 unimplemented |
 | DDNS-Client | ~5% | 僅 stub |
@@ -19,10 +19,11 @@
 
 - [x] **S1-1** 修復 Login 端點：從 DB 查詢使用者並用 Argon2 驗證密碼，移除 hardcoded `user_id = 9527`
   - 檔案：`crates/DDNS-Server/src/apis/auth/mod.rs:22`
-- [ ] **S1-2** 修復 Token Validator：用 Argon2 verify 比對 DB 中的 `token_hash`，目前只檢查 prefix
+- [x] **S1-2** 修復 Token Validator：用 Argon2 verify 比對 DB 中的 `token_hash`，目前只檢查 prefix
   - 檔案：`crates/DDNS-Server/src/middlewares/token_validator.rs:9`
-- [ ] **S1-3** API Key 持久化：`generate-api-key` 產生的 hash 必須寫入 `devices.token_hash`
-  - 檔案：`crates/DDNS-Server/src/command/mod.rs:64`
+  - ⚠️ **暫用方案 A**：device 識別透過 `X-Device-ID` header，待 S2-1 改 PATCH route 為 `/{deviceid}` 後應改為方案 B（從 path 取 device_id，移除 header 依賴）
+- [~] **S1-3** ~~API Key 持久化：`generate-api-key` CLI 寫入 `devices.token_hash`~~
+  - 已由 `POST /api/auth/devices` 取代，CLI 版本僅供測試用，暫不實作
 
 ---
 
