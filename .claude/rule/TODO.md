@@ -7,7 +7,7 @@
 | 模組 | 完成度 | 狀態 |
 |------|--------|------|
 | DDNS-Server (DB + ORM) | ~90% | 穩固 |
-| DDNS-Server (Auth API) | ~50% | 有安全漏洞 |
+| DDNS-Server (Auth API) | ~60% | Login 已修復，Token Validator 待修 |
 | DDNS-Server (DNS API) | ~30% | PATCH 未實作 |
 | DDNS-Server (CLI Commands) | ~40% | 多數 unimplemented |
 | DDNS-Client | ~5% | 僅 stub |
@@ -17,7 +17,7 @@
 
 ## Sprint 1 — 核心安全漏洞修復【最高優先，請先完成】
 
-- [ ] **S1-1** 修復 Login 端點：從 DB 查詢使用者並用 Argon2 驗證密碼，移除 hardcoded `user_id = 9527`
+- [x] **S1-1** 修復 Login 端點：從 DB 查詢使用者並用 Argon2 驗證密碼，移除 hardcoded `user_id = 9527`
   - 檔案：`crates/DDNS-Server/src/apis/auth/mod.rs:22`
 - [ ] **S1-2** 修復 Token Validator：用 Argon2 verify 比對 DB 中的 `token_hash`，目前只檢查 prefix
   - 檔案：`crates/DDNS-Server/src/middlewares/token_validator.rs:9`
