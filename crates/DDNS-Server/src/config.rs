@@ -72,7 +72,6 @@ impl AppConfig {
         Ok(())
     }
 
-    /// 檢查設定完整性，回傳警告訊息列表
     pub fn check(&self) -> Vec<String> {
         let mut warnings = Vec::new();
         if self.cloudflare.api_key.is_empty() {

@@ -69,7 +69,6 @@ pub async fn update_dns_record(
 
     let cf = DnsFactory::create(ProviderType::Cloudflare, &api_key);
 
-    // 取得所有 Zone，建立 zone_name -> zone_id 的對應表（依名稱長度降序，優先匹配最長）
     let zones = cf
         .list_zones(None)
         .await
@@ -77,7 +76,7 @@ pub async fn update_dns_record(
 
     let mut zone_map: Vec<(String, String)> =
         zones.into_iter().map(|(id, name)| (name, id)).collect();
-    zone_map.sort_by(|a, b| b.0.len().cmp(&a.0.len())); // 最長優先 (sub-zone 優先於 parent-zone)
+    zone_map.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
 
     let total = active_domains.len();
     let mut updated = 0usize;
@@ -85,8 +84,6 @@ pub async fn update_dns_record(
 
     for domain in &active_domains {
         let hostname = &domain.hostname;
-
-        // 找到最匹配的 Zone（hostname 為 zone_name 本身，或以 .zone_name 結尾）
         let zone_id = zone_map
             .iter()
             .find(|(zone_name, _)| {
@@ -103,7 +100,6 @@ pub async fn update_dns_record(
             }
         };
 
-        // 查詢該 hostname 在 Cloudflare 上的 DNS A record ID
         let records = match cf.list_records(&zone_id, Some(hostname)).await {
             Ok(r) => r,
             Err(e) => {
@@ -120,7 +116,6 @@ pub async fn update_dns_record(
             }
         };
 
-        // 更新 Cloudflare DNS 記錄
         match cf.update_record(&zone_id, hostname, &cf_record_id, new_ip, None).await {
             Ok(_) => {
                 db_service.update_domain_ip(domain.id, new_ip)?;

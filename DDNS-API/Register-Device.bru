@@ -17,6 +17,13 @@ body:json {
   }
 }
 
+script:post-response {
+  const data = res.getBody();
+  if (data && data.api_key) {
+    bru.setEnvVar("device_api_key", data.api_key);
+  }
+}
+
 settings {
   encodeUrl: true
   timeout: 0

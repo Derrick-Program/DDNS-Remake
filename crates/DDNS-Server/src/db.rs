@@ -22,7 +22,6 @@ impl DbService {
         Self { pool }
     }
 
-    //User operations
     pub fn create_user(&mut self, u_name: &str, p_hash: &str) -> Result<User> {
         let mut conn = self.pool.get()?;
         let new_user = NewUser { username: u_name, password_hash: p_hash };
@@ -43,7 +42,6 @@ impl DbService {
     }
 
     pub fn delete_user_by_username(&mut self, in_name: &str) -> Result<usize> {
-        //TODO: 添加使用者檢查，不要寫在外面
         let mut conn = self.pool.get()?;
         let count = diesel::delete(users.filter(username.eq(in_name))).execute(&mut conn)?;
         Ok(count)
@@ -63,7 +61,6 @@ impl DbService {
         let grouped_devices = devices_list.grouped_by(u_s);
         Ok(grouped_devices)
     }
-    //Device operations
     pub fn create_device(
         &mut self,
         u_name: &str,
@@ -149,7 +146,6 @@ impl DbService {
         Ok(grouped_domains)
     }
 
-    //Domain operations
     pub fn get_all_domains(&mut self) -> Result<Vec<String>> {
         let mut conn = self.pool.get()?;
         let all_domains = domains.select(hostname).load::<String>(&mut conn)?;
