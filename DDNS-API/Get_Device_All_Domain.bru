@@ -5,17 +5,17 @@ meta {
 }
 
 get {
-  url: {{v1_dns}}/:host_uuid
+  url: {{v1_dns}}/:deviceid
   body: none
-  auth: bearer
+  auth: inherit
 }
 
 params:path {
-  host_uuid: 63657b4c-e60c-42c7-b77b-0c68e7d53038
+  deviceid: 0049b8bd-f9b2-5705-a961-157ba0e580d6
 }
 
-auth:bearer {
-  token: ddns_tok_X2c1Q5fpHAuaPyGujm4lFqUFAVcvST4YhMajTwjVoXRMA
+headers {
+  x-device-key: {{device_api_key}}
 }
 
 settings {

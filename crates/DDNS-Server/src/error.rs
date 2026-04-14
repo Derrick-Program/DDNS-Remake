@@ -19,10 +19,14 @@ pub enum AppError {
     AuthenticationError,
     #[error("授權失敗")]
     AuthorizationError,
+    #[error("資源重複")]
+    ResourceConflict,
     #[error("資源未找到")]
     NotFound,
     #[error("無效的輸入: {0}")]
     InvalidInput(String),
+    #[error("功能尚未實作: {0}")]
+    NotImplemented(String),
     #[error("內部伺服器錯誤: {0}")]
     InternalServerError(String),
 
@@ -41,7 +45,9 @@ impl Writer for AppError {
             AppError::AuthorizationError => StatusCode::FORBIDDEN,
             AppError::NotFound => StatusCode::NOT_FOUND,
             AppError::InvalidInput(_) => StatusCode::BAD_REQUEST,
+            AppError::NotImplemented(_) => StatusCode::NOT_IMPLEMENTED,
             AppError::InternalServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::ResourceConflict => StatusCode::CONFLICT,
             AppError::Anyhow(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
@@ -71,6 +77,15 @@ impl EndpointOutRegister for AppError {
         operation.responses.insert(
             StatusCode::NOT_FOUND.as_str(),
             oapi::Response::new("Not Found").add_content("application/json", error_content.clone()),
+        );
+        operation.responses.insert(
+            StatusCode::NOT_IMPLEMENTED.as_str(),
+            oapi::Response::new("Not Implemented")
+                .add_content("application/json", error_content.clone()),
+        );
+        operation.responses.insert(
+            StatusCode::CONFLICT.as_str(),
+            oapi::Response::new("Conflict").add_content("application/json", error_content.clone()),
         );
         operation.responses.insert(
             StatusCode::INTERNAL_SERVER_ERROR.as_str(),

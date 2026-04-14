@@ -1,0 +1,30 @@
+meta {
+  name: Patch_Domain
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{v1_dns}}/:host_uuid
+  body: json
+  auth: inherit
+}
+
+params:path {
+  host_uuid: 0049b8bd-f9b2-5705-a961-157ba0e580d6
+}
+
+headers {
+  x-device-key: {{device_api_key}}
+}
+
+body:json {
+  {
+    "Ip":"1.1.1.1"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

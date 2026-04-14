@@ -85,5 +85,74 @@ pub fn add_device(
     owner_name: &str,
     ctx: &Arc<AppState>,
 ) -> Result<CommandResult> {
+    let mut db = ctx.db_service.clone();
+    if db.find_device_by_name(device_name)?.is_some() {
+        error!("Device '{}' already exists", device_name);
+        return Ok(CommandResult::Continue);
+    }
+    let api_key = crate::command::utils::generate_api_key();
+    let token_hash = crate::command::utils::hash_token(&api_key);
+    let device_uuid = uuid::Uuid::new_v4();
+    let device =
+        db.create_device(owner_name, device_uuid, device_name.to_string(), token_hash)?;
+    info!("Device '{}' added (identifier: {})", device.device_name, device.device_identifier);
+    info!("API Key（請妥善保存，之後無法再次查看）: {}", api_key);
+    Ok(CommandResult::Continue)
+}
+
+pub fn remove_device(device_name: &str, ctx: &Arc<AppState>) -> Result<CommandResult> {
+    let mut db = ctx.db_service.clone();
+    let n = db.delete_device_by_name(device_name)?;
+    if n == 0 {
+        error!("Device '{}' not found", device_name);
+    } else {
+        info!("Device '{}' removed", device_name);
+    }
+    Ok(CommandResult::Continue)
+}
+
+pub fn add_domain(
+    device_name: &str,
+    domain_name: &str,
+    ctx: &Arc<AppState>,
+) -> Result<CommandResult> {
+    let mut db = ctx.db_service.clone();
+    let device = match db.find_device_by_name(device_name)? {
+        Some(d) => d,
+        None => {
+            error!("Device '{}' not found", device_name);
+            return Ok(CommandResult::Continue);
+        }
+    };
+    let domain = db.create_domain(device.id, domain_name, true)?;
+    info!("Domain '{}' added to device '{}'", domain.hostname, device_name);
+    Ok(CommandResult::Continue)
+}
+
+pub fn remove_domain(domain_name: &str, ctx: &Arc<AppState>) -> Result<CommandResult> {
+    let mut db = ctx.db_service.clone();
+    let n = db.delete_domain_by_hostname(domain_name)?;
+    if n == 0 {
+        error!("Domain '{}' not found", domain_name);
+    } else {
+        info!("Domain '{}' removed", domain_name);
+    }
+    Ok(CommandResult::Continue)
+}
+
+pub fn list_domains(ctx: &Arc<AppState>) -> Result<CommandResult> {
+    let mut table = Table::new();
+    table
+        .load_preset(UTF8_FULL)
+        .apply_modifier(UTF8_ROUND_CORNERS)
+        .set_content_arrangement(ContentArrangement::Dynamic)
+        .set_width(40)
+        .set_header(vec!["Hostname"]);
+    let mut db = ctx.db_service.clone();
+    let all_domains = db.get_all_domains()?;
+    for domain in &all_domains {
+        table.add_row(vec![domain.to_string()]);
+    }
+    info!("顯示所有域名表格\n{table}");
     Ok(CommandResult::Continue)
 }

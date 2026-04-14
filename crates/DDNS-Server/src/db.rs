@@ -22,7 +22,6 @@ impl DbService {
         Self { pool }
     }
 
-    //User operations
     pub fn create_user(&mut self, u_name: &str, p_hash: &str) -> Result<User> {
         let mut conn = self.pool.get()?;
         let new_user = NewUser { username: u_name, password_hash: p_hash };
@@ -43,7 +42,6 @@ impl DbService {
     }
 
     pub fn delete_user_by_username(&mut self, in_name: &str) -> Result<usize> {
-        //TODO: 添加使用者檢查，不要寫在外面
         let mut conn = self.pool.get()?;
         let count = diesel::delete(users.filter(username.eq(in_name))).execute(&mut conn)?;
         Ok(count)
@@ -63,7 +61,6 @@ impl DbService {
         let grouped_devices = devices_list.grouped_by(u_s);
         Ok(grouped_devices)
     }
-    //Device operations
     pub fn create_device(
         &mut self,
         u_name: &str,
@@ -84,6 +81,55 @@ impl DbService {
         Ok(device)
     }
 
+    pub fn find_device_by_name_and_user_id(&mut self, u_id: i32, name: &str) -> Result<Option<Device>> {
+        let mut conn = self.pool.get()?;
+        let result = devices
+            .filter(user_id.eq(u_id).and(device_name.eq(name)))
+            .first::<Device>(&mut conn)
+            .optional()?;
+        Ok(result)
+    }
+
+    pub fn create_device_by_user_id(
+        &mut self,
+        u_id: i32,
+        d_id: Uuid,
+        d_name: String,
+        t_hash: String,
+    ) -> Result<Device> {
+        let mut conn = self.pool.get()?;
+        let new_device = NewDevice {
+            user_id: u_id,
+            device_identifier: d_id.to_string(),
+            device_name: d_name,
+            token_hash: t_hash,
+            updated_at: chrono::Utc::now().naive_utc(),
+        };
+        let device = diesel::insert_into(devices).values(&new_device).get_result(&mut conn)?;
+        Ok(device)
+    }
+
+    pub fn delete_device_by_name_and_user_id(&mut self, u_id: i32, name: &str) -> Result<usize> {
+        let mut conn = self.pool.get()?;
+        let count = diesel::delete(devices.filter(user_id.eq(u_id).and(device_name.eq(name))))
+            .execute(&mut conn)?;
+        Ok(count)
+    }
+
+    pub fn find_device_by_name(&mut self, name: &str) -> Result<Option<Device>> {
+        let mut conn = self.pool.get()?;
+        let result =
+            devices.filter(device_name.eq(name)).first::<Device>(&mut conn).optional()?;
+        Ok(result)
+    }
+
+    pub fn delete_device_by_name(&mut self, name: &str) -> Result<usize> {
+        let mut conn = self.pool.get()?;
+        let count =
+            diesel::delete(devices.filter(device_name.eq(name))).execute(&mut conn)?;
+        Ok(count)
+    }
+
     pub fn find_by_device_identifier(&mut self, ident: &str) -> Result<Option<Device>> {
         let mut conn = self.pool.get()?;
         let result =
@@ -100,7 +146,19 @@ impl DbService {
         Ok(grouped_domains)
     }
 
-    //Domain operations
+    pub fn get_all_domains(&mut self) -> Result<Vec<String>> {
+        let mut conn = self.pool.get()?;
+        let all_domains = domains.select(hostname).load::<String>(&mut conn)?;
+        Ok(all_domains)
+    }
+
+    pub fn delete_domain_by_hostname(&mut self, host: &str) -> Result<usize> {
+        let mut conn = self.pool.get()?;
+        let count =
+            diesel::delete(domains.filter(hostname.eq(host))).execute(&mut conn)?;
+        Ok(count)
+    }
+
     pub fn create_domain(&mut self, dev_id: i32, host: &str, is_a: bool) -> Result<Domain> {
         let mut conn = self.pool.get()?;
         let new_domain = NewDomain {
@@ -119,6 +177,18 @@ impl DbService {
             .filter(device_id.eq(dev_id).and(is_active.eq(true)))
             .load::<Domain>(&mut conn)?;
         Ok(results)
+    }
+
+    pub fn update_domain_ip(&mut self, domain_id: i32, new_ip: std::net::Ipv4Addr) -> Result<()> {
+        use crate::schema::domains::dsl::updated_at as domain_updated_at;
+        let mut conn = self.pool.get()?;
+        diesel::update(domains.find(domain_id))
+            .set((
+                current_ip.eq(Some(new_ip.to_string())),
+                domain_updated_at.eq(chrono::Utc::now().naive_utc()),
+            ))
+            .execute(&mut conn)?;
+        Ok(())
     }
 }
 

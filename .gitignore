@@ -2,3 +2,6 @@
 .direnv
 .cache
 *.db
+.claude/settings.local.json
+*.db-shm
+*.db-wal

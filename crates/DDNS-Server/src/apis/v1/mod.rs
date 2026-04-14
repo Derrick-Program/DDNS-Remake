@@ -1,27 +1,26 @@
 use super::*;
 use crate::error::{AppError, AppResult};
+use crate::providers::{DnsFactory, ProviderType};
 use ddns_core::{CommonResponse, GetDnsRecordsResponse, UpdateDnsRecordRequest, WebDomain};
 use salvo::oapi::extract::{JsonBody, PathParam};
 use std::sync::Arc;
 use uuid::Uuid;
+
 pub fn routers() -> Router {
-    //TODO: 這裡的路由需要區分使用者調用與設備調用
-    //TODO: 之後再擴充使用者可以登入的話，才需要驗證使用者的password
-    //TODO: 目前先實作設備調用的API，所以需要帶上設備的token
     Router::with_path("v1").hoop(token_validator).push(
-        Router::with_path("dns_records")
-            .push(Router::with_path("{deviceid}").get(self::get_dns_records))
-            .push(Router::with_path("{record_id}").patch(self::update_dns_record)),
+        Router::with_path("dns_records").push(
+            Router::with_path("{deviceid}")
+                .get(self::get_dns_records)
+                .patch(self::update_dns_record),
+        ),
     )
 }
-
-//TODO: 添加API，獲取DNS紀錄，更新DNS紀錄
 
 /// 獲取裝置可以更新的DNS紀錄列表，包含hostname和當前IP等資訊
 #[endpoint]
 pub async fn get_dns_records(
     depod: &mut Depot,
-    deviceid: PathParam<Uuid>, //UUID v5
+    deviceid: PathParam<Uuid>,
 ) -> AppResult<Json<GetDnsRecordsResponse>> {
     debug!("Received request to get DNS records");
     let app_state = depod
@@ -36,20 +35,114 @@ pub async fn get_dns_records(
     Ok(Json(GetDnsRecordsResponse { domains: domains.into_iter().map(WebDomain::from).collect() }))
 }
 
-//TODO: 更新的時候需要檢查DNS name 是否與用戶綁定，並且檢查IP格式是否正確
-/// 更新DNS紀錄，根據record_id來更新對應的紀錄
+/// 更新裝置所有 active 域名的 IP，並同步更新 Cloudflare DNS 記錄
 #[endpoint]
 pub async fn update_dns_record(
-    res: &mut Response,
-    record_id: PathParam<Uuid>,
+    depod: &mut Depot,
+    deviceid: PathParam<Uuid>,
     data: JsonBody<UpdateDnsRecordRequest>,
-) {
-    debug!("Received request to update DNS record with ID: {}", record_id);
-    debug!("Request data.ip: {:?}", data.ip);
-    // let data = data.into_inner();
-    res.status_code(StatusCode::NOT_IMPLEMENTED)
-        .render(Json(CommonResponse { message: "Not Implemented".into() }));
+) -> AppResult<Json<CommonResponse>> {
+    let new_ip = data.into_inner().ip;
+    debug!("Received request to update DNS records for device: {}, new IP: {}", deviceid, new_ip);
+
+    let app_state = depod
+        .obtain::<Arc<crate::command::AppState>>()
+        .map_err(|_| anyhow::anyhow!("Failed to obtain AppState from Depot"))?;
+
+    let api_key = app_state.config.cloudflare.api_key.clone();
+    if api_key.is_empty() {
+        return Err(AppError::InternalServerError(
+            "Cloudflare API key 未設定，請執行: config set cloudflare.api_key <key>".into(),
+        ));
+    }
+
+    let mut db_service = app_state.db_service.clone();
+    let device_id_str = deviceid.into_inner().to_string();
+
+    let device =
+        db_service.find_by_device_identifier(&device_id_str)?.ok_or(AppError::DeviceNotFound)?;
+
+    let active_domains = db_service.find_active_domains_by_device_id(device.id)?;
+    if active_domains.is_empty() {
+        return Ok(Json(CommonResponse { message: "此裝置無活躍域名".into() }));
+    }
+
+    let cf = DnsFactory::create(ProviderType::Cloudflare, &api_key);
+
+    let zones = cf
+        .list_zones(None)
+        .await
+        .map_err(|e| AppError::InternalServerError(format!("Cloudflare 列出 Zone 失敗: {}", e)))?;
+
+    let mut zone_map: Vec<(String, String)> =
+        zones.into_iter().map(|(id, name)| (name, id)).collect();
+    zone_map.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+
+    let total = active_domains.len();
+    let mut updated = 0usize;
+    let mut error_msgs: Vec<String> = Vec::new();
+
+    for domain in &active_domains {
+        let hostname = &domain.hostname;
+        let zone_id = zone_map
+            .iter()
+            .find(|(zone_name, _)| {
+                hostname == zone_name
+                    || hostname.ends_with(&format!(".{}", zone_name))
+            })
+            .map(|(_, id)| id.clone());
+
+        let zone_id = match zone_id {
+            Some(id) => id,
+            None => {
+                error_msgs.push(format!("{}: 無對應的 Cloudflare Zone", hostname));
+                continue;
+            }
+        };
+
+        let records = match cf.list_records(&zone_id, Some(hostname)).await {
+            Ok(r) => r,
+            Err(e) => {
+                error_msgs.push(format!("{}: 查詢 DNS 記錄失敗: {}", hostname, e));
+                continue;
+            }
+        };
+
+        let cf_record_id = match records.into_iter().find(|(_, name, _)| name == hostname) {
+            Some((id, _, _)) => id,
+            None => {
+                error_msgs.push(format!("{}: Cloudflare 上無此 DNS A 記錄", hostname));
+                continue;
+            }
+        };
+
+        match cf.update_record(&zone_id, hostname, &cf_record_id, new_ip, None).await {
+            Ok(_) => {
+                db_service.update_domain_ip(domain.id, new_ip)?;
+                updated += 1;
+                debug!("Updated {} -> {}", hostname, new_ip);
+            }
+            Err(e) => {
+                error_msgs.push(format!("{}: Cloudflare 更新失敗: {}", hostname, e));
+            }
+        }
+    }
+
+    let message = if error_msgs.is_empty() {
+        format!("已更新 {}/{} 個域名 IP 為 {}", updated, total, new_ip)
+    } else {
+        format!(
+            "已更新 {}/{} 個域名 IP 為 {}；錯誤: {}",
+            updated,
+            total,
+            new_ip,
+            error_msgs.join("; ")
+        )
+    };
+
+    Ok(Json(CommonResponse { message }))
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -64,29 +157,9 @@ mod tests {
         let service = Service::new(router);
 
         let res = TestClient::patch(format!("http://127.0.0.1:8698/v1/dns_records/{}", record_id))
-            .json(&json!({ "ip": "1.1.1.1" }))
+            .json(&json!({ "Ip": "1.1.1.1" }))
             .send(&service)
             .await;
         assert_eq!(res.status_code.unwrap(), StatusCode::UNAUTHORIZED);
     }
-
-    // #[tokio::test]
-    // async fn test_update_dns_record_not_implemented() {
-    //     let router = v1::routers();
-    //     let record_id = Uuid::new_v4();
-
-    //     // 模擬帶有 Token 的請求 (假設你的 validator 檢查某個 header)
-    //     let mut res =
-    //         TestClient::patch(format!("http://127.0.0.1:5800/v1/dns_records/{}", record_id))
-    //             .insert_header("Authorization", "Bearer valid_token")
-    //             .json(&json!({ "ip": "1.1.1.1" }))
-    //             .send(router)
-    //             .await;
-
-    //     // 目前你的實作回傳 NOT_IMPLEMENTED
-    //     assert_eq!(res.status_code.unwrap(), StatusCode::NOT_IMPLEMENTED);
-
-    //     let body: CommonResponse = res.parse_json().await.unwrap();
-    //     assert_eq!(body.message, "Not Implemented");
-    // }
 }
