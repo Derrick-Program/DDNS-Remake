@@ -14,6 +14,11 @@ pub struct LoginRequest {
     pub password: String,
 }
 
+#[derive(Deserialize, ToSchema, Debug)]
+pub struct RegisterDeviceRequest {
+    pub device_name: String,
+}
+
 #[derive(Serialize, ToSchema, Debug)]
 pub struct TokenResponse {
     pub token: String,

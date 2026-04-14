@@ -1,9 +1,9 @@
-use crate::command::utils::{generate_api_key, verify_client_token};
+use crate::command::utils::verify_client_token;
 use crate::error::{AppError, AppResult};
 use crate::middlewares::user::{JwtClaims, get_secret, jwt_middleware};
-use ddns_core::{CommonResponse, LoginRequest, TokenResponse};
+use ddns_core::{CommonResponse, LoginRequest, RegisterDeviceRequest, TokenResponse};
 use jsonwebtoken::{EncodingKey, Header, encode};
-use salvo::oapi::extract::JsonBody;
+use salvo::oapi::extract::{JsonBody, PathParam};
 use salvo::prelude::*;
 use salvo::{Router, oapi::endpoint};
 use std::sync::Arc;
@@ -14,7 +14,11 @@ pub fn routers() -> Router {
     let protected_routes = Router::with_hoop(jwt_middleware())
         .push(Router::with_path("profile").get(get_profile))
         .push(Router::with_path("is_login").get(is_login))
-        .push(Router::with_path("exchange").get(exchange_token));
+        .push(
+            Router::with_path("devices")
+                .post(register_device)
+                .push(Router::with_path("{device_name}").delete(delete_device)),
+        );
     Router::with_path("auth").push(public_routes).push(protected_routes)
 }
 
@@ -64,12 +68,19 @@ pub async fn is_login(depot: &mut Depot) -> Json<CommonResponse> {
 }
 
 #[endpoint]
-pub async fn exchange_token(depot: &mut Depot) -> AppResult<Json<TokenResponse>> {
-    let is_logged_in = depot.jwt_auth_data::<JwtClaims>().is_some();
-    if is_logged_in {
-        let new_device_token = generate_api_key();
-        Ok(Json(TokenResponse { token: new_device_token }))
-    } else {
-        Err(crate::error::AppError::AuthenticationError)
-    }
+pub async fn register_device(
+    _depot: &mut Depot,
+    data: JsonBody<RegisterDeviceRequest>,
+) -> AppResult<Json<TokenResponse>> {
+    tracing::debug!("Received request to register device with name: {}", data.device_name);
+    Err(AppError::NotImplemented("register_device 還未實作".into()))
+}
+
+#[endpoint]
+pub async fn delete_device(
+    _depot: &mut Depot,
+    device_name: PathParam<String>,
+) -> AppResult<Json<CommonResponse>> {
+    tracing::debug!("Received request to delete device with name: {}", device_name);
+    Err(AppError::NotImplemented("delete_device 還未實作".into()))
 }

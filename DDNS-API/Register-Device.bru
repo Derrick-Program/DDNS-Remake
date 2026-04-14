@@ -1,0 +1,22 @@
+meta {
+  name: Register-Device
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{auth}}/devices
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "device_name":"test-device"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
