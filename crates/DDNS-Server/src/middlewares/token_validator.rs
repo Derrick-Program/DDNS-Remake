@@ -2,8 +2,8 @@ use crate::command::utils::verify_client_token;
 use salvo::prelude::*;
 use std::sync::Arc;
 
-// TODO(S2-1): 目前用 X-Device-ID header 識別裝置（方案 A）。
-//   待 PATCH route 改為 /dns_records/{deviceid} 後，應改從 path 取得 device_id（方案 B），移除 X-Device-ID 依賴。
+// 方案 B：device 識別透過 path param `{deviceid}` 取得，無需 X-Device-ID header。
+// 路由必須包含 `{deviceid}` path param，例如 /api/v1/dns_records/{deviceid}
 #[handler]
 pub async fn token_validator(
     req: &mut Request,
@@ -11,6 +11,7 @@ pub async fn token_validator(
     res: &mut Response,
     ctrl: &mut FlowCtrl,
 ) {
+    // 1. 驗證 Bearer token 格式
     let token = match req
         .header::<String>("authorization")
         .and_then(|h| h.strip_prefix("Bearer ").map(|s| s.to_owned()))
@@ -24,7 +25,8 @@ pub async fn token_validator(
         }
     };
 
-    let device_id = match req.header::<String>("x-device-id") {
+    // 2. 從 path param 取得 device_id（UUID v5 字串）
+    let device_id = match req.param::<String>("deviceid") {
         Some(id) => id,
         None => {
             res.status_code(StatusCode::UNAUTHORIZED).render("Unauthorized");
@@ -42,6 +44,7 @@ pub async fn token_validator(
         }
     };
 
+    // 3. 查詢 DB 確認裝置存在
     let mut db = app_state.db_service.clone();
     let device = match db.find_by_device_identifier(&device_id) {
         Ok(Some(d)) => d,
@@ -52,6 +55,7 @@ pub async fn token_validator(
         }
     };
 
+    // 4. Argon2 驗證 token hash
     if !verify_client_token(&device.token_hash, &token) {
         res.status_code(StatusCode::UNAUTHORIZED).render("Unauthorized");
         ctrl.skip_rest();

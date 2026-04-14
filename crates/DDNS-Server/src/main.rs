@@ -1,4 +1,5 @@
 mod apis;
+mod config;
 mod parser;
 mod command;
 mod db;
@@ -70,15 +71,23 @@ async fn main() -> Result<()> {
             .map_err(|e| anyhow::anyhow!("資料庫遷移失敗: {}", e))?;
     }
     let db_service = DbService::new(pool);
-    let ctx = Arc::new(command::AppState { db_service });
     if std::env::args_os().len() > 1 {
         let cli = parser::cli::Cli::parse();
         init_tracing(&cli.verbosity.to_string())?;
+        let config = config::AppConfig::load_or_default(&cli.config);
+        let config_path = cli.config.clone();
+        let ctx = Arc::new(command::AppState { db_service, config, config_path });
         match handle(cli, &ctx).await? {
             CommandResult::Continue | CommandResult::Exit => {}
         }
     } else {
         init_tracing("info")?;
+        let config = config::AppConfig::load_or_default("config.toml");
+        let ctx = Arc::new(command::AppState {
+            db_service,
+            config,
+            config_path: "config.toml".to_string(),
+        });
         parser::repl::run(&ctx).await?;
     }
     

@@ -7,9 +7,9 @@
 | 模組 | 完成度 | 狀態 |
 |------|--------|------|
 | DDNS-Server (DB + ORM) | ~90% | 穩固 |
-| DDNS-Server (Auth API) | ~80% | Login + Token Validator 已修復，暫用 X-Device-ID header |
-| DDNS-Server (DNS API) | ~30% | PATCH 未實作 |
-| DDNS-Server (CLI Commands) | ~40% | 多數 unimplemented |
+| DDNS-Server (Auth API) | ~85% | Login + Token Validator 已修復，改用 path param 識別裝置 |
+| DDNS-Server (DNS API) | ~80% | PATCH 已實作並整合 Cloudflare |
+| DDNS-Server (CLI Commands) | ~70% | Config 子指令已實作 |
 | DDNS-Client | ~5% | 僅 stub |
 | DDNS-Core (DTOs) | ~85% | 基本完整 |
 
@@ -29,15 +29,16 @@
 
 ## Sprint 2 — Server 業務邏輯
 
-- [ ] **S2-1** 實作 `PATCH /api/v1/dns_records/{record_id}`，目前回傳 501
-  - 檔案：`crates/DDNS-Server/src/apis/v1/mod.rs:39`
-- [ ] **S2-2** 整合 Cloudflare Provider 到 DNS 更新流程（程式碼已存在，未接線）
-  - 檔案：`crates/DDNS-Server/src/providers/cloudflare.rs`
+- [x] **S2-1** 實作 `PATCH /api/v1/dns_records/{deviceid}`，路由已合併（GET+PATCH 同路徑）
+  - token_validator 改為方案 B（從 path param 取 deviceid，移除 X-Device-ID header 依賴）
+- [x] **S2-2** 整合 Cloudflare Provider 到 DNS 更新流程
+  - 查 Zone → 查 Record → 更新 Cloudflare → 寫回 DB `current_ip`
 - [x] **S2-3** CLI `server add-device` / `remove-device` / `list-devices`
 - [x] **S2-4** CLI `server add-domain` / `remove-domain` / `list-domains`
 - [x] **S2-5** CLI `server delete-user` 加入使用者存在性驗證（已確認早已實作）
-- [ ] **S2-6** Config 子指令（generate / get / set / check），目前全部 unimplemented
-  - 檔案：`crates/DDNS-Server/src/command/mod.rs:32`
+- [x] **S2-6** Config 子指令（generate / get / set / check）
+  - 新增 `src/config.rs`（AppConfig TOML 結構），AppState 加入 config 欄位
+  - generate: 產生預設 config.toml；check: 驗證設定；get/set: 讀寫指定 key
 
 ---
 

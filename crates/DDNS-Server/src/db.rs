@@ -182,6 +182,18 @@ impl DbService {
             .load::<Domain>(&mut conn)?;
         Ok(results)
     }
+
+    pub fn update_domain_ip(&mut self, domain_id: i32, new_ip: std::net::Ipv4Addr) -> Result<()> {
+        use crate::schema::domains::dsl::updated_at as domain_updated_at;
+        let mut conn = self.pool.get()?;
+        diesel::update(domains.find(domain_id))
+            .set((
+                current_ip.eq(Some(new_ip.to_string())),
+                domain_updated_at.eq(chrono::Utc::now().naive_utc()),
+            ))
+            .execute(&mut conn)?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]

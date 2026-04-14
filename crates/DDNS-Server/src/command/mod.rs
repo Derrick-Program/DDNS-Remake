@@ -1,7 +1,7 @@
 mod server;
 mod start;
 pub mod utils;
-use std::{net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, path::Path, sync::Arc};
 
 use crate::{
     command,
@@ -18,6 +18,8 @@ pub enum CommandResult {
 #[allow(unused)]
 pub struct AppState {
     pub db_service: crate::db::DbService,
+    pub config: crate::config::AppConfig,
+    pub config_path: String,
 }
 
 #[allow(unused)]
@@ -28,20 +30,46 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
         Commands::Config(config_args) => {
             match &config_args.action {
                 ConfigSubcommands::Generate { force } => {
-                    // println!("正在產生 {} 格式的設定檔 (強制覆蓋: {})", format, force);
-                    unimplemented!("ConfigSubcommands::Generate 還未實作");
+                    let path = &cli.config;
+                    if !*force && Path::new(path).exists() {
+                        error!("設定檔 '{}' 已存在，使用 --force 強制覆蓋", path);
+                        return Ok(CommandResult::Continue);
+                    }
+                    let config = crate::config::AppConfig::default();
+                    config.save(path)?;
+                    info!("已產生預設設定檔: {}", path);
                 }
                 ConfigSubcommands::Check => {
-                    // println!("正在檢查設定檔：{}", cli.config);
-                    unimplemented!("ConfigSubcommands::Check 還未實作");
+                    let path = &cli.config;
+                    match crate::config::AppConfig::load(path) {
+                        Err(e) => error!("設定檔 '{}' 讀取失敗: {}", path, e),
+                        Ok(config) => {
+                            let issues = config.check();
+                            if issues.is_empty() {
+                                info!("設定檔 '{}' 驗證通過", path);
+                            } else {
+                                for issue in &issues {
+                                    error!("警告: {}", issue);
+                                }
+                            }
+                        }
+                    }
                 }
                 ConfigSubcommands::Get { key } => {
-                    // println!("正在獲取設定檔中的值，key: {}", key);
-                    unimplemented!("ConfigSubcommands::Get 還未實作");
+                    match ctx.config.get_value(key) {
+                        Some(v) => info!("{} = {}", key, v),
+                        None => error!(
+                            "未知的設定鍵: '{}'. 可用鍵: server.host, server.port, cloudflare.api_key",
+                            key
+                        ),
+                    }
                 }
                 ConfigSubcommands::Set { key, value } => {
-                    // println!("正在設定設定檔中的值，key: {}, value: {}", key, value);
-                    unimplemented!("ConfigSubcommands::Set 還未實作");
+                    let path = &cli.config;
+                    let mut config = crate::config::AppConfig::load_or_default(path);
+                    config.set_value(key, value)?;
+                    config.save(path)?;
+                    info!("已設定 {} = {}", key, value);
                 }
             }
             Ok(CommandResult::Continue)
