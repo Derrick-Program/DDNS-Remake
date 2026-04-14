@@ -33,12 +33,9 @@
   - 檔案：`crates/DDNS-Server/src/apis/v1/mod.rs:39`
 - [ ] **S2-2** 整合 Cloudflare Provider 到 DNS 更新流程（程式碼已存在，未接線）
   - 檔案：`crates/DDNS-Server/src/providers/cloudflare.rs`
-- [ ] **S2-3** CLI `server add-device` / `remove-device` / `list-devices`
-  - 檔案：`crates/DDNS-Server/src/command/mod.rs:110`
-- [ ] **S2-4** CLI `server add-domain` / `remove-domain` / `list-domains`
-  - 檔案：`crates/DDNS-Server/src/command/mod.rs:94`
-- [ ] **S2-5** CLI `server delete-user` 加入使用者存在性驗證
-  - 檔案：`crates/DDNS-Server/src/command/server.rs:46`
+- [x] **S2-3** CLI `server add-device` / `remove-device` / `list-devices`
+- [x] **S2-4** CLI `server add-domain` / `remove-domain` / `list-domains`
+- [x] **S2-5** CLI `server delete-user` 加入使用者存在性驗證（已確認早已實作）
 - [ ] **S2-6** Config 子指令（generate / get / set / check），目前全部 unimplemented
   - 檔案：`crates/DDNS-Server/src/command/mod.rs:32`
 

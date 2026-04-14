@@ -78,7 +78,7 @@ pub struct ServerArgs {
 pub enum ServerSubcommands {
     ///產生API Key到選擇的地方（如: 輸出到終端、儲存到檔案）
     GenerateApiKey {
-        #[arg(short, long)]
+        #[arg(short = 'u', long)]
         username: String,
     },
     /// 產生當前機器的 UUID v5（用於測試裝置註冊）
@@ -87,42 +87,42 @@ pub enum ServerSubcommands {
     ListUsers,
     /// 新增使用者
     AddUser {
-        #[arg(short, long)]
+        #[arg(short = 'u', long)]
         username: String,
-        #[arg(short, long)]
+        #[arg(short = 'p', long)]
         password: Option<String>,
     },
     /// 移除使用者
     RemoveUser {
-        #[arg(short, long)]
+        #[arg(short = 'u', long)]
         username: String,
     },
     /// 列出所有裝置
     ListDevices,
     /// 新增裝置
     AddDevice {
-        #[arg(short, long)]
+        #[arg(short = 'd', long)]
         device_name: String,
-        #[arg(short, long)]
+        #[arg(short = 'o', long)]
         owner_username: String,
     },
     /// 移除裝置
     RemoveDevice {
-        #[arg(short, long)]
+        #[arg(short = 'd', long)]
         device_name: String,
     },
     /// 列出所有裝置綁定的域名
     ListDomains,
     /// 新增裝置綁定的域名
     AddDomain {
-        #[arg(short, long)]
+        #[arg(short = 'd', long)]
         device_name: String,
-        #[arg(short, long)]
+        #[arg(short = 'n', long)]
         domain_name: String,
     },
     /// 移除裝置綁定的域名
     RemoveDomain {
-        #[arg(short, long)]
+        #[arg(short = 'n', long)]
         domain_name: String,
     },
 }

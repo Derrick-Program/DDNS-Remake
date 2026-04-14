@@ -119,6 +119,20 @@ impl DbService {
         Ok(count)
     }
 
+    pub fn find_device_by_name(&mut self, name: &str) -> Result<Option<Device>> {
+        let mut conn = self.pool.get()?;
+        let result =
+            devices.filter(device_name.eq(name)).first::<Device>(&mut conn).optional()?;
+        Ok(result)
+    }
+
+    pub fn delete_device_by_name(&mut self, name: &str) -> Result<usize> {
+        let mut conn = self.pool.get()?;
+        let count =
+            diesel::delete(devices.filter(device_name.eq(name))).execute(&mut conn)?;
+        Ok(count)
+    }
+
     pub fn find_by_device_identifier(&mut self, ident: &str) -> Result<Option<Device>> {
         let mut conn = self.pool.get()?;
         let result =
@@ -136,6 +150,19 @@ impl DbService {
     }
 
     //Domain operations
+    pub fn get_all_domains(&mut self) -> Result<Vec<String>> {
+        let mut conn = self.pool.get()?;
+        let all_domains = domains.select(hostname).load::<String>(&mut conn)?;
+        Ok(all_domains)
+    }
+
+    pub fn delete_domain_by_hostname(&mut self, host: &str) -> Result<usize> {
+        let mut conn = self.pool.get()?;
+        let count =
+            diesel::delete(domains.filter(hostname.eq(host))).execute(&mut conn)?;
+        Ok(count)
+    }
+
     pub fn create_domain(&mut self, dev_id: i32, host: &str, is_a: bool) -> Result<Domain> {
         let mut conn = self.pool.get()?;
         let new_domain = NewDomain {

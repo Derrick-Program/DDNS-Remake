@@ -93,31 +93,19 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
                     command::server::list_device(ctx)?;
                 }
                 ServerSubcommands::AddDomain { device_name, domain_name } => {
-                    println!(
-                        "正在新增裝置綁定的域名，device_name: {}, domain_name: {}",
-                        device_name, domain_name
-                    );
-                    //TODO: 將輸入的裝置名稱及域名做檢查之後寫入
-                    unimplemented!("ServerSubcommands::AddDomain 還未實作");
+                    command::server::add_domain(device_name, domain_name, ctx)?;
                 }
                 ServerSubcommands::RemoveDomain { domain_name } => {
-                    println!("正在移除裝置綁定的域名，domain_name: {}", domain_name);
-                    unimplemented!("ServerSubcommands::RemoveDomain 還未實作");
+                    command::server::remove_domain(domain_name, ctx)?;
                 }
                 ServerSubcommands::ListDomains => {
-                    println!("正在列出所有裝置綁定的域名...");
-                    unimplemented!("ServerSubcommands::ListDomains 還未實作");
+                    command::server::list_domains(ctx)?;
                 }
                 ServerSubcommands::AddDevice { device_name, owner_username } => {
-                    println!(
-                        "正在新增裝置，device_name: {}, owner_username: {}",
-                        device_name, owner_username
-                    );
-                    unimplemented!("ServerSubcommands::AddDevice 還未實作");
+                    command::server::add_device(device_name, owner_username, ctx)?;
                 }
                 ServerSubcommands::RemoveDevice { device_name } => {
-                    println!("正在移除裝置，device_name: {}", device_name);
-                    unimplemented!("ServerSubcommands::RemoveDevice 還未實作");
+                    command::server::remove_device(device_name, ctx)?;
                 }
             }
             Ok(CommandResult::Continue)
