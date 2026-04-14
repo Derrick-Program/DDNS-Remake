@@ -8,7 +8,7 @@ use crate::{
     parser::cli::{Cli, Commands, ConfigSubcommands, ServerSubcommands},
 };
 use anyhow::Result;
-use tracing::info;
+use tracing::{error, info};
 
 pub enum CommandResult {
     Continue,
@@ -64,6 +64,12 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
                     //TODO: 要先檢查使用者是否存在，之後在將產出的deviceKey寫入device資料庫
                     //TODO: 這裡可能就是當測試時使用，因為正式的時候沒有需要手動產生
                     command::server::generate_api_key(username, ctx)?;
+                }
+                ServerSubcommands::GenerateDeviceId => {
+                    match ddns_core::get_device_id() {
+                        Ok(uuid) => info!("此機器的 Device UUID v5: {}", uuid),
+                        Err(e) => error!("無法產生 Device UUID: {}", e),
+                    }
                 }
                 ServerSubcommands::ListUsers => {
                     command::server::list_users(ctx)?;

@@ -81,6 +81,8 @@ pub enum ServerSubcommands {
         #[arg(short, long)]
         username: String,
     },
+    /// 產生當前機器的 UUID v5（用於測試裝置註冊）
+    GenerateDeviceId,
     /// 列出所有使用者
     ListUsers,
     /// 新增使用者
