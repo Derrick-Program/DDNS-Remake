@@ -317,16 +317,16 @@ function _Install-WindowsService {
     }
 
     Write-Info "Creating Windows Service: $DisplayName ..."
-    $result = sc.exe create $ServiceName `
-        binPath= $BinaryPath `
-        start= auto `
-        DisplayName= $DisplayName
-
-    if ($LASTEXITCODE -ne 0) {
-        Die "Failed to create service: $result"
+    try {
+        New-Service `
+            -Name          $ServiceName `
+            -BinaryPathName $BinaryPath `
+            -DisplayName   $DisplayName `
+            -Description   $Description `
+            -StartupType   Automatic | Out-Null
+    } catch {
+        Die "Failed to create service: $($_.Exception.Message)"
     }
-
-    sc.exe description $ServiceName $Description | Out-Null
 
     sc.exe failure $ServiceName reset= 86400 actions= restart/10000/restart/30000/restart/60000 | Out-Null
 
