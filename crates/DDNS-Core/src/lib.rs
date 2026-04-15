@@ -17,44 +17,46 @@ pub struct CommonResponse {
     pub message: String,
 }
 
-#[derive(Deserialize, ToSchema, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct LoginRequest {
     pub username: String,
     pub password: String,
 }
 
-#[derive(Deserialize, ToSchema, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct RegisterDeviceRequest {
     pub device_name: String,
     pub device_id: String,
 }
 
-#[derive(Serialize, ToSchema, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct TokenResponse {
     pub token: String,
 }
 
-#[derive(Serialize, ToSchema, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct RegisterDeviceResponse {
     pub device_name: String,
     pub device_id: String,
     pub api_key: String,
 }
 
-#[derive(Deserialize, ToSchema, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct UpdateDnsRecordRequest {
     #[serde(rename = "Ip")]
     pub ip: Ipv4Addr,
+    /// 要更新的域名清單，空陣列表示更新裝置所有 active 域名
+    #[serde(default)]
+    pub domains: Vec<String>,
 }
 
-#[derive(Debug, ToSchema, Serialize)]
-pub struct WebDomain{
+#[derive(Debug, ToSchema, Serialize, Deserialize)]
+pub struct WebDomain {
     pub hostname: String,
     pub current_ip: Option<String>,
 }
 
-
-#[derive(Debug, ToSchema, Serialize)]
+#[derive(Debug, ToSchema, Serialize, Deserialize)]
 pub struct GetDnsRecordsResponse {
     pub domains: Vec<WebDomain>,
 }

@@ -10,7 +10,7 @@
 | DDNS-Server (Auth API) | ~85% | Login + Token Validator 已修復，改用 path param 識別裝置 |
 | DDNS-Server (DNS API) | ~80% | PATCH 已實作並整合 Cloudflare |
 | DDNS-Server (CLI Commands) | ~70% | Config 子指令已實作 |
-| DDNS-Client | ~5% | 僅 stub |
+| DDNS-Client | ~80% | Config / HTTP Client / Daemon / CLI 已完成 |
 | DDNS-Core (DTOs) | ~85% | 基本完整 |
 
 ---
@@ -44,13 +44,19 @@
 
 ## Sprint 3 — DDNS-Client 開發【目前僅有 stub】
 
-- [ ] **S3-1** 讀取設定檔（Server URL + Device Token）
-- [ ] **S3-2** 主迴圈：定期偵測 public IP，若有變更才觸發更新
-- [ ] **S3-3** 呼叫 `PATCH /api/v1/dns_records/{record_id}` 更新 DNS 記錄
-  - 使用 DDNS-Core 的 `UpdateDnsRecordRequest` DTO
-- [ ] **S3-4** CLI 參數解析（Clap）
-- [ ] **S3-5** systemd service 檔案（daemon 自動啟動）
-- [ ] **S3-6** 錯誤重試邏輯（指數退避）
+- [x] **S3-1** 讀取設定檔（Server URL + Device Token）
+  - `crates/DDNS-Client/src/config.rs`：`ClientConfig`，讀寫 `~/.config/ddns-client/config.toml`
+- [x] **S3-2** 主迴圈：定期偵測 public IP，若有變更才觸發更新
+  - `crates/DDNS-Client/src/daemon.rs`
+- [x] **S3-3** 呼叫 `PATCH /api/v1/dns_records/{device_id}` 更新 DNS 記錄
+  - `crates/DDNS-Client/src/client.rs`：`DdnsClient`
+  - 同時補上 `UpdateDnsRecordRequest` 的 `Serialize` derive（DDNS-Core）
+- [x] **S3-4** CLI 參數解析（Clap）
+  - `crates/DDNS-Client/src/main.rs`：`run` / `check` / `config init` / `config path`
+- [x] **S3-5** systemd service 檔案（daemon 自動啟動）
+  - `deploy/ddns-client.service`
+- [x] **S3-6** 錯誤重試邏輯（指數退避）
+  - 內建於 `daemon.rs`：5s → 10s → 20s → ... → 300s 上限
 
 ---
 

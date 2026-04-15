@@ -7,6 +7,7 @@ mod middlewares;
 mod models;
 mod providers;
 mod schema;
+mod tui;
 
 use std::sync::Arc;
 

@@ -42,8 +42,7 @@ pub async fn update_dns_record(
     deviceid: PathParam<Uuid>,
     data: JsonBody<UpdateDnsRecordRequest>,
 ) -> AppResult<Json<CommonResponse>> {
-    let new_ip = data.into_inner().ip;
-    debug!("Received request to update DNS records for device: {}, new IP: {}", deviceid, new_ip);
+    debug!("Received request to update DNS records for device: {}", deviceid);
 
     let app_state = depod
         .obtain::<Arc<crate::command::AppState>>()
@@ -62,10 +61,28 @@ pub async fn update_dns_record(
     let device =
         db_service.find_by_device_identifier(&device_id_str)?.ok_or(AppError::DeviceNotFound)?;
 
-    let active_domains = db_service.find_active_domains_by_device_id(device.id)?;
-    if active_domains.is_empty() {
+    let all_domains = db_service.find_active_domains_by_device_id(device.id)?;
+    if all_domains.is_empty() {
         return Ok(Json(CommonResponse { message: "此裝置無活躍域名".into() }));
     }
+
+    // 若 client 指定了域名清單，取交集；否則更新全部
+    let requested = data.into_inner();
+    let new_ip = requested.ip;
+    let active_domains = if requested.domains.is_empty() {
+        all_domains
+    } else {
+        let filter: std::collections::HashSet<&str> =
+            requested.domains.iter().map(String::as_str).collect();
+        let filtered: Vec<_> =
+            all_domains.into_iter().filter(|d| filter.contains(d.hostname.as_str())).collect();
+        if filtered.is_empty() {
+            return Err(AppError::InvalidInput(
+                "指定的域名皆不屬於此裝置，無可更新項目".into(),
+            ));
+        }
+        filtered
+    };
 
     let cf = DnsFactory::create(ProviderType::Cloudflare, &api_key);
 
