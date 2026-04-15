@@ -84,9 +84,16 @@ journalctl -u duacodie-client -f
 **macOS**（launchd）：
 
 ```bash
-launchctl list com.duacodie.server
-launchctl list com.duacodie.client
+# 查看服務狀態
+sudo launchctl print system/com.duacodie.server
+sudo launchctl print system/com.duacodie.client
+
+# 或快速確認是否執行中
+sudo launchctl list | grep duacodie
+
+# 查看 log
 tail -f /var/log/duacodie/ddns-server.log
+tail -f /var/log/duacodie/ddns-client.log
 ```
 
 ### Windows

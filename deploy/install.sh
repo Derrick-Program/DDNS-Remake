@@ -354,7 +354,7 @@ _setup_launchd_server() {
 </plist>
 EOF
 
-    launchctl load -w "${plist_file}"
+    launchctl bootstrap system "${plist_file}"
     success "Service loaded (launchd)"
 }
 
@@ -501,7 +501,7 @@ _setup_launchd_client() {
 </plist>
 EOF
 
-    launchctl load -w "${plist_file}"
+    launchctl bootstrap system "${plist_file}"
     success "Service loaded (launchd)"
 }
 
@@ -532,7 +532,7 @@ uninstall() {
         for label in com.duacodie.server com.duacodie.client; do
             local plist="/Library/LaunchDaemons/${label}.plist"
             if [[ -f "${plist}" ]]; then
-                launchctl unload -w "${plist}" 2>/dev/null || true
+                launchctl bootout system "${plist}" 2>/dev/null || true
                 rm -f "${plist}"
             fi
         done
