@@ -30,21 +30,49 @@ die()     { error "$*"; exit 1; }
 bold()    { echo -e "${BOLD}$*${NC}"; }
 
 # ── Version resolution ────────────────────────────────────────────────────────
+# Uses DDNS_VERSION env var if set; otherwise fetches latest from GitHub API
+# with up to 3 retries and exponential backoff.
 resolve_version() {
     if [[ -n "${DDNS_VERSION:-}" ]]; then
         VERSION="${DDNS_VERSION}"
         info "Using specified version: ${VERSION}"
     else
         info "Fetching latest release version from GitHub ..."
-        VERSION=$(curl -fsSL \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${REPO}/releases/latest" \
-            | grep -m1 '"tag_name"' \
-            | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
+
+        local attempts=3
+        local delay=2
+        local response
+
+        for ((i = 1; i <= attempts; i++)); do
+            response=$(curl -fsSL --max-time 10 \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null || true)
+
+            VERSION=$(echo "${response}" \
+                | grep -m1 '"tag_name"' \
+                | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
+
+            if [[ -n "${VERSION}" ]]; then
+                success "Latest version: ${VERSION}"
+                break
+            fi
+
+            if echo "${response}" | grep -q "rate limit"; then
+                warn "GitHub API rate limit hit."
+            fi
+
+            if [[ "${i}" -lt "${attempts}" ]]; then
+                warn "Attempt ${i}/${attempts} failed, retrying in ${delay}s ..."
+                sleep "${delay}"
+                delay=$((delay * 2))
+            fi
+        done
+
         if [[ -z "${VERSION}" ]]; then
-            die "Could not fetch latest version. Set DDNS_VERSION env var to specify one manually (e.g. DDNS_VERSION=v0.1.1 sudo ./install.sh)"
+            die "Could not fetch latest version after ${attempts} attempts.
+  Tip: set DDNS_VERSION to install a specific version, e.g.
+       DDNS_VERSION=v0.1.1 sudo ./install.sh"
         fi
-        success "Latest version: ${VERSION}"
     fi
     BASE_URL="https://github.com/${REPO}/releases/download/${VERSION}"
 }

@@ -28,22 +28,42 @@ function Die {
 }
 
 # ── Version resolution ───────────────────────────────────────────────────────
+# Uses DDNS_VERSION env var if set; otherwise fetches latest from GitHub API
+# with up to 3 retries and exponential backoff.
 function Resolve-Version {
     if ($env:DDNS_VERSION) {
-        $script:VERSION  = $env:DDNS_VERSION
+        $script:VERSION = $env:DDNS_VERSION
         Write-Info "Using specified version: $script:VERSION"
     } else {
         Write-Info "Fetching latest release version from GitHub ..."
-        try {
-            $release = Invoke-RestMethod `
-                -Uri "https://api.github.com/repos/$REPO/releases/latest" `
-                -Headers @{ Accept = "application/vnd.github+json" } `
-                -UseBasicParsing
-            $script:VERSION = $release.tag_name
-        } catch {
-            Die "Could not fetch latest version.`nSet DDNS_VERSION env var to specify one manually (e.g. `$env:DDNS_VERSION='v0.1.1'`).`nError: $($_.Exception.Message)"
+
+        $attempts = 3
+        $delay    = 2
+
+        for ($i = 1; $i -le $attempts; $i++) {
+            try {
+                $release = Invoke-RestMethod `
+                    -Uri "https://api.github.com/repos/$REPO/releases/latest" `
+                    -Headers @{ Accept = "application/vnd.github+json" } `
+                    -TimeoutSec 10 `
+                    -UseBasicParsing
+                $script:VERSION = $release.tag_name
+                Write-Ok "Latest version: $script:VERSION"
+                break
+            } catch {
+                $errMsg = $_.Exception.Message
+                if ($errMsg -match "rate limit") {
+                    Write-Warn "GitHub API rate limit hit."
+                }
+                if ($i -lt $attempts) {
+                    Write-Warn "Attempt $i/$attempts failed, retrying in ${delay}s ... ($errMsg)"
+                    Start-Sleep -Seconds $delay
+                    $delay *= 2
+                } else {
+                    Die "Could not fetch latest version after $attempts attempts.`nTip: set DDNS_VERSION to install a specific version, e.g.`n     `$env:DDNS_VERSION='v0.1.1'; .\install.ps1`nError: $errMsg"
+                }
+            }
         }
-        Write-Ok "Latest version: $script:VERSION"
     }
     $script:BASE_URL = "https://github.com/$REPO/releases/download/$script:VERSION"
 }
