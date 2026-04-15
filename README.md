@@ -35,13 +35,13 @@ users (1) ──→ (N) devices (1) ──→ (N) domains
 ### Linux / macOS
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.sh | sudo bash
+curl -fsSL "https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.sh?t=$(date +%s)" | sudo bash
 ```
 
 或下載後執行：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.sh -o install.sh
+curl -fsSL "https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.sh?t=$(date +%s)" -o install.sh
 chmod +x install.sh
 sudo ./install.sh
 ```
@@ -92,13 +92,15 @@ tail -f /var/log/duacodie/ddns-server.log
 以系統管理員身份開啟 PowerShell，執行：
 
 ```powershell
-irm https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.ps1 | iex
+$t = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+irm "https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.ps1?t=$t" | iex
 ```
 
 或下載後執行：
 
 ```powershell
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.ps1" -OutFile install.ps1
+$t = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.ps1?t=$t" -OutFile install.ps1
 .\install.ps1
 ```
 

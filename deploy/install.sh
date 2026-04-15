@@ -487,7 +487,7 @@ uninstall() {
     detect_platform
 
     read -rp "  This will remove all DDNS binaries and services. Continue? [y/N]: " CONFIRM
-    [[ "${CONFIRM,,}" == "y" ]] || { info "Aborted."; exit 0; }
+    [[ "${CONFIRM}" == "y" || "${CONFIRM}" == "Y" ]] || { info "Aborted."; exit 0; }
 
     if [[ "${PLATFORM}" == "linux" ]]; then
         for svc in duacodie-server duacodie-client; do
