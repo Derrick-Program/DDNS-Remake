@@ -1,8 +1,9 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use tracing::info;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
+use ddns_client::client::{login, register_device};
 use ddns_client::config::ClientConfig;
 use ddns_client::{daemon, get_public_ip};
 
@@ -19,10 +20,28 @@ enum Command {
     Run,
     /// 一次性偵測目前 public IP（不更新 DNS）
     Check,
+    /// 認證管理
+    Auth {
+        #[command(subcommand)]
+        action: AuthAction,
+    },
     /// 設定檔管理
     Config {
         #[command(subcommand)]
         action: ConfigAction,
+    },
+}
+
+#[derive(Subcommand)]
+enum AuthAction {
+    /// 登入伺服器並自動將 device_token 寫入設定檔
+    Login {
+        /// 伺服器位址（未指定時從設定檔讀取）
+        #[arg(long, short)]
+        server: Option<String>,
+        /// 裝置名稱（預設使用主機名稱）
+        #[arg(long, short = 'n')]
+        device_name: Option<String>,
     },
 }
 
@@ -53,6 +72,11 @@ async fn main() -> Result<()> {
             info!("目前 public IP：{ip}");
             println!("{ip}");
         }
+        Command::Auth { action } => match action {
+            AuthAction::Login { server, device_name } => {
+                handle_login(server, device_name).await?;
+            }
+        },
         Command::Config { action } => match action {
             ConfigAction::Init => {
                 let config = ClientConfig::default();
@@ -66,6 +90,60 @@ async fn main() -> Result<()> {
             }
         },
     }
+
+    Ok(())
+}
+
+async fn handle_login(server_arg: Option<String>, device_name_arg: Option<String>) -> Result<()> {
+    // 決定 server_url：優先用 --server 參數，其次從設定檔讀取
+    let server_url = match server_arg {
+        Some(url) => url,
+        None => {
+            ClientConfig::load()
+                .context("請用 --server 指定伺服器位址，或先執行 config init 建立設定檔")?
+                .server_url
+        }
+    };
+
+    // 取得裝置名稱（預設使用主機名稱）
+    let device_name = device_name_arg
+        .or_else(|| hostname::get().ok()?.into_string().ok())
+        .unwrap_or_else(|| "ddns-device".to_string());
+
+    // 取得裝置 UUID
+    let device_id = ddns_core::get_device_id()
+        .map_err(|e| anyhow::anyhow!(e))?
+        .to_string();
+
+    // 提示輸入帳號密碼
+    let username = {
+        print!("使用者名稱：");
+        use std::io::{Write, stdin, stdout};
+        stdout().flush()?;
+        let mut buf = String::new();
+        stdin().read_line(&mut buf)?;
+        buf.trim().to_string()
+    };
+    let password = rpassword::prompt_password("密碼：").context("無法讀取密碼")?;
+
+    // Step 1：登入取得 JWT
+    println!("正在登入 {server_url} ...");
+    let jwt = login(&server_url, &username, &password).await?;
+    println!("登入成功");
+
+    // Step 2：註冊裝置取得 api_key
+    println!("正在註冊裝置 \"{device_name}\" (device_id: {device_id}) ...");
+    let api_key = register_device(&server_url, &jwt, &device_name, &device_id).await?;
+    println!("裝置註冊成功");
+
+    // Step 3：寫入 config
+    let mut config = ClientConfig::load().unwrap_or_default();
+    config.server_url = server_url;
+    config.device_token = api_key;
+    config.save()?;
+
+    let path = ClientConfig::config_path();
+    println!("已將 device_token 寫入設定檔：{}", path.display());
 
     Ok(())
 }

@@ -8,6 +8,9 @@ pub struct ClientConfig {
     pub device_token: String,
     #[serde(default = "default_check_interval")]
     pub check_interval_secs: u64,
+    /// 要更新的域名清單，空陣列表示更新裝置所有 active 域名
+    #[serde(default)]
+    pub domains: Vec<String>,
 }
 
 fn default_check_interval() -> u64 {
@@ -20,6 +23,7 @@ impl Default for ClientConfig {
             server_url: "http://127.0.0.1:8698".to_string(),
             device_token: "your-api-token-here".to_string(),
             check_interval_secs: 60,
+            domains: Vec::new(),
         }
     }
 }
