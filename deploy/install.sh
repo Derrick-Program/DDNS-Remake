@@ -256,15 +256,16 @@ EOF
     echo "  1. Add a DNS zone:  ddns-server config zone-add <your-domain>"
     echo "  2. Add a user:      ddns-server server add-user -u <username>"
     echo "  3. Review config:   ${cfg_file}"
-    echo "  4. Open TUI:        sudo ddns-tui"
+    echo "  4. Open TUI:        sudo ddns-tui  (or: sudo ${BIN_DIR}/ddns-tui)"
     echo "  5. Check status:    $([ "${PLATFORM}" = "linux" ] && echo "systemctl status duacodie-server" || echo "launchctl list com.duacodie.server")"
     warn "Note: JWT secret is auto-generated on each start. Tokens will be invalidated on restart."
 }
 
 _install_tui_wrapper() {
     local db_url="$1"
-    local wrapper="/usr/local/bin/ddns-tui"
-    mkdir -p /usr/local/bin
+    # Always write into BIN_DIR (guaranteed writable); symlink to /usr/local/bin if possible
+    local wrapper="${BIN_DIR}/ddns-tui"
+    local link="/usr/local/bin/ddns-tui"
     cat > "${wrapper}" <<EOF
 #!/usr/bin/env bash
 # ddns-tui — wrapper installed by DDNS Remake installer
@@ -275,7 +276,16 @@ exec sudo -u "${SERVICE_USER}" \\
     "${BIN_DIR}/ddns-server" tui "\$@"
 EOF
     chmod +x "${wrapper}"
-    success "TUI wrapper installed → ${wrapper}  (run: sudo ddns-tui)"
+    success "TUI wrapper installed → ${wrapper}"
+
+    # Try symlinking to /usr/local/bin for convenience; skip silently if not writable
+    mkdir -p /usr/local/bin 2>/dev/null || true
+    if ln -sf "${wrapper}" "${link}" 2>/dev/null; then
+        success "Symlink created → ${link}  (run: sudo ddns-tui)"
+    else
+        warn "Could not create symlink at ${link} (SIP or permissions)."
+        info  "Run TUI with: sudo ${wrapper}"
+    fi
 }
 
 # ── systemd (Linux) ───────────────────────────────────────────────────────────
@@ -597,7 +607,7 @@ _uninstall_server() {
         _remove_service_macos "com.duacodie.server"
     fi
     rm -f "${BIN_DIR}/ddns-server"
-    rm -f "/usr/local/bin/ddns-tui"
+    rm -f "${BIN_DIR}/ddns-tui" "/usr/local/bin/ddns-tui"
     rm -rf "${CONFIG_DIR}/duacodie/ddns"
     rm -f "${LOG_DIR}/ddns-server.log" "${LOG_DIR}/ddns-server.err"
     success "DDNS Server removed."
