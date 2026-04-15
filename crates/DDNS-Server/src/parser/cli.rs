@@ -29,6 +29,8 @@ pub enum Commands {
     Config(ConfigArgs),
     ///Server相關操作
     Server(ServerArgs),
+    /// 開啟互動式管理介面（TUI）
+    Tui,
     /// 退出應用程式
     Exit,
 }

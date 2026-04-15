@@ -107,6 +107,11 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
             Ok(CommandResult::Continue)
         }
 
+        Commands::Tui => {
+            crate::tui::run_tui(ctx.clone())?;
+            Ok(CommandResult::Continue)
+        }
+
         Commands::Start { port, host } => {
             info!("Starting DDNS Server");
             let sl = SocketAddr::new((*host).into(), *port);
