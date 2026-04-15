@@ -37,13 +37,13 @@ pub struct CloudflareConfig {
     pub api_key: String,
 }
 
-/// 獲取預設設定檔路徑（符合 XDG 規範）
+/// 獲取預設設定檔路徑
 pub fn default_config_path() -> PathBuf {
-    let base = std::env::var("XDG_CONFIG_HOME").map(PathBuf::from).unwrap_or_else(|_| {
-        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        PathBuf::from(home).join(".config")
-    });
-    base.join("duacodie").join("ddns").join("config.toml")
+    dirs::config_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("duacodie")
+        .join("ddns")
+        .join("config.toml")
 }
 
 impl AppConfig {

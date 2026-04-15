@@ -1,6 +1,10 @@
+pub mod client;
+pub mod config;
+pub mod daemon;
+
 use anyhow::Result;
 use std::net::{IpAddr, Ipv4Addr};
-#[allow(unused)]
+
 pub async fn get_public_ip() -> Result<Ipv4Addr> {
     match public_ip_address::perform_lookup(None).await {
         Ok(resp) => {

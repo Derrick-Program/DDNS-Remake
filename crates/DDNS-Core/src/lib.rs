@@ -41,7 +41,7 @@ pub struct RegisterDeviceResponse {
     pub api_key: String,
 }
 
-#[derive(Deserialize, ToSchema, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct UpdateDnsRecordRequest {
     #[serde(rename = "Ip")]
     pub ip: Ipv4Addr,
