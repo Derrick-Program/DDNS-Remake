@@ -47,7 +47,7 @@
 
         commonBuildInputs = with pkgs;
           [
-            openssl
+            # openssl
             sqlite
           ]
           ++ lib.optionals stdenv.isDarwin (
@@ -57,9 +57,9 @@
         commonEnv = {
           CC = "${pkgs.stdenv.cc}/bin/cc";
           CXX = "${pkgs.stdenv.cc}/bin/c++";
-          OPENSSL_DIR = pkgs.openssl.dev;
-          OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
-          OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
+          # OPENSSL_DIR = pkgs.openssl.dev;
+          # OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
+          # OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
           # RUSTFLAGS = "-C link-arg=-fuse-ld=mold";
         };
         src = craneLib.cleanCargoSource (craneLib.path ./.);
@@ -124,7 +124,8 @@
             cargo-sort
           ];
           # inherit (commonEnv) CC CXX OPENSSL_DIR OPENSSL_LIB_DIR OPENSSL_INCLUDE_DIR RUSTFLAGS;
-          inherit (commonEnv) CC CXX OPENSSL_DIR OPENSSL_LIB_DIR OPENSSL_INCLUDE_DIR;
+          # inherit (commonEnv) CC CXX OPENSSL_DIR OPENSSL_LIB_DIR OPENSSL_INCLUDE_DIR;
+          inherit (commonEnv) CC CXX;
           shellHook = ''
             export RUST_BACKTRACE=1
             export RUST_SRC_PATH="${rustToolchain}/lib/rustlib/src/rust/library"
