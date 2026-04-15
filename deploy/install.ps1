@@ -213,7 +213,8 @@ api_key = "$cfApiKey"
         -ServiceName   "DuacodieServer" `
         -DisplayName   "Duacodie DDNS Server" `
         -Description   "Duacodie Dynamic DNS Server - https://github.com/$REPO" `
-        -BinaryPath    "`"$BIN_DIR\ddns-server.exe`" start"
+        -BinaryPath    "`"$BIN_DIR\ddns-server.exe`" start" `
+        -EnvVars       @("XDG_CONFIG_HOME=$CONFIG_DIR", "DATABASE_URL=$dbPath")
 
     Write-Host ""
     Write-Ok "DDNS Server installed successfully!"
@@ -295,7 +296,8 @@ domains = []
         -ServiceName   "DuacodieClient" `
         -DisplayName   "Duacodie DDNS Client" `
         -Description   "Duacodie Dynamic DNS Client Daemon - https://github.com/$REPO" `
-        -BinaryPath    "`"$BIN_DIR\ddns-client.exe`" run"
+        -BinaryPath    "`"$BIN_DIR\ddns-client.exe`" run" `
+        -EnvVars       @("XDG_CONFIG_HOME=$CONFIG_DIR")
 
     Write-Host ""
     Write-Ok "DDNS Client installed successfully!"
@@ -311,7 +313,8 @@ function _Install-WindowsService {
         [string]$ServiceName,
         [string]$DisplayName,
         [string]$Description,
-        [string]$BinaryPath
+        [string]$BinaryPath,
+        [string[]]$EnvVars = @()
     )
 
     $existing = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
@@ -334,10 +337,32 @@ function _Install-WindowsService {
         Die "Failed to create service: $($_.Exception.Message)"
     }
 
+    # Write per-service environment variables directly into the registry.
+    # Machine-level SetEnvironmentVariable is only picked up after a reboot;
+    # services.exe reads these registry values at service start without rebooting.
+    if ($EnvVars.Count -gt 0) {
+        $regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$ServiceName"
+        Set-ItemProperty -Path $regPath -Name "Environment" -Value $EnvVars -Type MultiString
+        Write-Ok "Service environment variables written to registry."
+    }
+
     sc.exe failure $ServiceName reset= 86400 actions= restart/10000/restart/30000/restart/60000 | Out-Null
 
-    Start-Service -Name $ServiceName
-    Write-Ok "Service '$ServiceName' created and started."
+    try {
+        Start-Service -Name $ServiceName
+        Write-Ok "Service '$ServiceName' created and started."
+    } catch {
+        Write-Warn "Service '$ServiceName' was created but could not start automatically."
+        Write-Warn "Error: $($_.Exception.Message)"
+        Write-Host ""
+        Write-Info "To diagnose, run in PowerShell (as Administrator):"
+        Write-Host "  Get-EventLog -LogName Application -Source '$ServiceName' -Newest 10 | Format-List"
+        Write-Host "  Get-EventLog -LogName System -Source 'Service Control Manager' -Newest 5 | Format-List"
+        Write-Info "Or try starting manually and checking stderr:"
+        Write-Host "  `$env:XDG_CONFIG_HOME='$CONFIG_DIR'; & '$BinaryPath'"
+        Write-Host ""
+        Write-Info "The service is configured for Automatic start — it will retry on next boot."
+    }
 }
 
 # =============================================================================
