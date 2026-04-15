@@ -1,11 +1,11 @@
 [Unit]
-Description=DDNS Client Daemon
+Description=DDNS Server Daemon
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/opt/duacodie/bin/ddns-client run
+ExecStart=/opt/duacodie/bin/ddns start
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
