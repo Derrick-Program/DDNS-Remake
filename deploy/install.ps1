@@ -196,10 +196,13 @@ api_key = "$cfApiKey"
 
     $acl = Get-Acl $cfgFile
     $acl.SetAccessRuleProtection($true, $false)
-    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-        "SYSTEM", "FullControl", "Allow"
-    )
-    $acl.AddAccessRule($rule)
+    foreach ($identity in @("SYSTEM", "BUILTIN\Administrators")) {
+        $acl.AddAccessRule(
+            (New-Object System.Security.AccessControl.FileSystemAccessRule(
+                $identity, "FullControl", "Allow"
+            ))
+        )
+    }
     Set-Acl $cfgFile $acl
     Write-Ok "Config written to $cfgFile"
 
@@ -259,10 +262,13 @@ domains = []
 
     $acl = Get-Acl $cfgFile
     $acl.SetAccessRuleProtection($true, $false)
-    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-        "SYSTEM", "FullControl", "Allow"
-    )
-    $acl.AddAccessRule($rule)
+    foreach ($identity in @("SYSTEM", "BUILTIN\Administrators")) {
+        $acl.AddAccessRule(
+            (New-Object System.Security.AccessControl.FileSystemAccessRule(
+                $identity, "FullControl", "Allow"
+            ))
+        )
+    }
     Set-Acl $cfgFile $acl
     Write-Ok "Initial config written to $cfgFile"
 
