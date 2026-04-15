@@ -402,11 +402,12 @@ EOF
     info "Please log in to register this device with the DDNS server."
     info "The device token will be saved automatically."
     echo ""
-    if ! XDG_CONFIG_HOME="${CONFIG_DIR}" \
-        sudo -u "${SERVICE_USER}" "${BIN_DIR}/ddns-client" auth login \
+    if ! sudo -u "${SERVICE_USER}" \
+        env XDG_CONFIG_HOME="${CONFIG_DIR}" \
+        "${BIN_DIR}/ddns-client" auth login \
         --server "${SERVER_URL}" </dev/tty; then
         warn "Login failed or was skipped."
-        warn "You can register manually later: sudo -u ${SERVICE_USER} XDG_CONFIG_HOME=${CONFIG_DIR} ${BIN_DIR}/ddns-client auth login"
+        warn "You can register manually later: sudo -u ${SERVICE_USER} env XDG_CONFIG_HOME=${CONFIG_DIR} ${BIN_DIR}/ddns-client auth login"
     fi
 
     # Setup service
@@ -420,7 +421,7 @@ EOF
     success "DDNS Client installed successfully!"
     bold "\nNext steps:"
     echo "  1. Config:       ${cfg_file}"
-    echo "  2. Re-login:     sudo -u ${SERVICE_USER} XDG_CONFIG_HOME=${CONFIG_DIR} ${BIN_DIR}/ddns-client auth login"
+    echo "  2. Re-login:     sudo -u ${SERVICE_USER} env XDG_CONFIG_HOME=${CONFIG_DIR} ${BIN_DIR}/ddns-client auth login"
     echo "  3. Status:       $([ "${PLATFORM}" = "linux" ] && echo "systemctl status duacodie-client" || echo "sudo launchctl print system/com.duacodie.client")"
     echo "  4. Logs:         $([ "${PLATFORM}" = "linux" ] && echo "journalctl -u duacodie-client -f" || echo "tail -f ${LOG_DIR}/ddns-client.log")"
 }
