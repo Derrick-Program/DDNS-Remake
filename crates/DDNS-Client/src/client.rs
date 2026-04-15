@@ -32,7 +32,7 @@ impl DdnsClient {
         let resp = self
             .http
             .patch(&url)
-            .bearer_auth(&self.config.device_token)
+            .header("x-device-key", &self.config.device_token)
             .json(&body)
             .send()
             .await
@@ -119,7 +119,7 @@ pub async fn fetch_domains(
 
     let resp = http
         .get(&url)
-        .bearer_auth(api_key)
+        .header("x-device-key", api_key)
         .send()
         .await
         .with_context(|| format!("取得域名清單失敗：{url}"))?;

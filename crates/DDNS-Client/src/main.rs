@@ -43,6 +43,8 @@ enum AuthAction {
         #[arg(long, short = 'n')]
         device_name: Option<String>,
     },
+    /// 重新選擇此裝置要更新的域名（從伺服器取得最新清單）
+    SelectDomains,
 }
 
 #[derive(Subcommand)]
@@ -76,6 +78,9 @@ async fn main() -> Result<()> {
             AuthAction::Login { server, device_name } => {
                 handle_login(server, device_name).await?;
             }
+            AuthAction::SelectDomains => {
+                handle_select_domains().await?;
+            }
         },
         Command::Config { action } => match action {
             ConfigAction::Init => {
@@ -90,6 +95,42 @@ async fn main() -> Result<()> {
             }
         },
     }
+
+    Ok(())
+}
+
+async fn handle_select_domains() -> Result<()> {
+    let mut config = ClientConfig::load().context("請先執行 auth login 完成裝置註冊")?;
+
+    let device_id = ddns_core::get_device_id()
+        .map_err(|e| anyhow::anyhow!(e))?
+        .to_string();
+
+    println!("正在從 {} 取得域名清單 ...", config.server_url);
+    let available_domains = fetch_domains(&config.server_url, &config.device_token, &device_id).await?;
+
+    let selected_domains = if available_domains.is_empty() {
+        println!("此裝置尚無已設定的域名，請由伺服器管理員新增後再執行此指令。");
+        return Ok(());
+    } else {
+        let items: Vec<(&str, &str, bool)> = available_domains
+            .iter()
+            .map(|h| (h.as_str(), h.as_str(), config.domains.contains(h)))
+            .collect();
+
+        cliclack::multiselect("選擇要讓此裝置更新的域名（空白鍵選取，Enter 確認）：")
+            .items(&items)
+            .interact()?
+            .into_iter()
+            .map(|s: &str| s.to_string())
+            .collect()
+    };
+
+    config.domains = selected_domains;
+    config.save()?;
+
+    let path = ClientConfig::config_path();
+    println!("已將域名設定寫入：{}", path.display());
 
     Ok(())
 }
