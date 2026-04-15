@@ -335,45 +335,98 @@ function _Install-WindowsService {
 }
 
 # =============================================================================
+# UNINSTALLER HELPERS
+# =============================================================================
+function _Remove-Service {
+    param([string]$ServiceName)
+    $s = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+    if ($s) {
+        Stop-Service -Name $ServiceName -Force -ErrorAction SilentlyContinue
+        sc.exe delete $ServiceName | Out-Null
+        Write-Ok "Service '$ServiceName' removed."
+    }
+}
+
+function _Remove-Server {
+    Write-Info "Removing DDNS Server ..."
+    _Remove-Service "DuacodieServer"
+    Remove-Item -Force "$BIN_DIR\ddns-server.exe" -ErrorAction SilentlyContinue
+    Remove-Item -Recurse -Force "$CONFIG_DIR\duacodie\ddns" -ErrorAction SilentlyContinue
+    Remove-Item -Force "$LOG_DIR\ddns-server*" -ErrorAction SilentlyContinue
+    # Remove server-only env vars
+    [System.Environment]::SetEnvironmentVariable("DATABASE_URL", $null, "Machine")
+    Write-Ok "DDNS Server removed."
+}
+
+function _Remove-Client {
+    Write-Info "Removing DDNS Client ..."
+    _Remove-Service "DuacodieClient"
+    Remove-Item -Force "$BIN_DIR\ddns-client.exe" -ErrorAction SilentlyContinue
+    Remove-Item -Recurse -Force "$CONFIG_DIR\duacodie\ddns-client" -ErrorAction SilentlyContinue
+    Remove-Item -Force "$LOG_DIR\ddns-client*" -ErrorAction SilentlyContinue
+    Write-Ok "DDNS Client removed."
+}
+
+function _Cleanup-Shared {
+    $hasServer = Test-Path "$BIN_DIR\ddns-server.exe"
+    $hasClient = Test-Path "$BIN_DIR\ddns-client.exe"
+
+    if (-not $hasServer -and -not $hasClient) {
+        # Both gone — remove shared dirs and env vars
+        if (Test-Path $INSTALL_DIR) {
+            Remove-Item -Recurse -Force $INSTALL_DIR
+            Write-Ok "Removed $INSTALL_DIR"
+        }
+        $currentPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+        $newPath = ($currentPath -split ";" | Where-Object { $_ -ne $BIN_DIR }) -join ";"
+        [System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
+        Write-Ok "Removed $BIN_DIR from PATH."
+
+        [System.Environment]::SetEnvironmentVariable("XDG_CONFIG_HOME", $null, "Machine")
+        Write-Ok "Removed environment variable 'XDG_CONFIG_HOME'."
+    } else {
+        Write-Info "Shared directories kept (other component still installed)."
+    }
+}
+
+# =============================================================================
 # UNINSTALLER
 # =============================================================================
 function Uninstall-All {
-    Write-Bold "`n=== Uninstalling DDNS Remake ===`n"
+    Write-Bold "`n=== Uninstall DDNS Remake ===`n"
 
-    $confirm = Read-Host "  This will remove all DDNS binaries and services. Continue? [y/N]"
-    if ($confirm -notmatch "^[yY]$") {
-        Write-Info "Aborted."
-        return
-    }
+    Write-Host "  What would you like to remove?"
+    Write-Host ""
+    Write-Host "  [1] Uninstall DDNS Server"
+    Write-Host "  [2] Uninstall DDNS Client"
+    Write-Host "  [3] Uninstall Both"
+    Write-Host "  [4] Cancel"
+    Write-Host ""
+    $choice = Read-Host "  Select [1-4]"
+    Write-Host ""
 
-    # Stop and remove services
-    foreach ($svc in @("DuacodieServer", "DuacodieClient")) {
-        $s = Get-Service -Name $svc -ErrorAction SilentlyContinue
-        if ($s) {
-            Stop-Service -Name $svc -Force -ErrorAction SilentlyContinue
-            sc.exe delete $svc | Out-Null
-            Write-Ok "Service '$svc' removed."
+    switch ($choice) {
+        "1" {
+            $confirm = Read-Host "  Remove DDNS Server? [y/N]"
+            if ($confirm -notmatch "^[yY]$") { Write-Info "Aborted."; return }
+            _Remove-Server
+            _Cleanup-Shared
         }
-    }
-
-    # Remove install directory
-    if (Test-Path $INSTALL_DIR) {
-        Remove-Item -Recurse -Force $INSTALL_DIR
-        Write-Ok "Removed $INSTALL_DIR"
-    }
-
-    # Remove from system PATH
-    $currentPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
-    $newPath = ($currentPath -split ";" | Where-Object { $_ -ne $BIN_DIR }) -join ";"
-    [System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
-    Write-Ok "Removed $BIN_DIR from PATH."
-
-    # Remove system environment variables set during install
-    foreach ($envVar in @("XDG_CONFIG_HOME", "DATABASE_URL")) {
-        if ([System.Environment]::GetEnvironmentVariable($envVar, "Machine")) {
-            [System.Environment]::SetEnvironmentVariable($envVar, $null, "Machine")
-            Write-Ok "Removed environment variable '$envVar'."
+        "2" {
+            $confirm = Read-Host "  Remove DDNS Client? [y/N]"
+            if ($confirm -notmatch "^[yY]$") { Write-Info "Aborted."; return }
+            _Remove-Client
+            _Cleanup-Shared
         }
+        "3" {
+            $confirm = Read-Host "  Remove both Server and Client? [y/N]"
+            if ($confirm -notmatch "^[yY]$") { Write-Info "Aborted."; return }
+            _Remove-Server
+            _Remove-Client
+            _Cleanup-Shared
+        }
+        "4" { Write-Info "Cancelled."; return }
+        default { Die "Invalid choice: $choice" }
     }
 
     Write-Ok "Uninstall complete."

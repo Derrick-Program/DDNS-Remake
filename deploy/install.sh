@@ -522,42 +522,33 @@ EOF
 }
 
 # =============================================================================
-# UNINSTALLER
+# UNINSTALLER HELPERS
 # =============================================================================
-uninstall() {
-    bold "\n=== Uninstalling DDNS Remake ==="
-    require_root
-
-    detect_platform
-
-    read -rp "  This will remove all DDNS binaries and services. Continue? [y/N]: " CONFIRM </dev/tty
-    [[ "${CONFIRM}" == "y" || "${CONFIRM}" == "Y" ]] || { info "Aborted."; exit 0; }
-
-    if [[ "${PLATFORM}" == "linux" ]]; then
-        for svc in duacodie-server duacodie-client; do
-            if systemctl is-active --quiet "${svc}" 2>/dev/null; then
-                systemctl stop "${svc}"
-            fi
-            if systemctl is-enabled --quiet "${svc}" 2>/dev/null; then
-                systemctl disable "${svc}"
-            fi
-            rm -f "/etc/systemd/system/${svc}.service"
-        done
-        systemctl daemon-reload
-    else
-        for label in com.duacodie.server com.duacodie.client; do
-            local plist="/Library/LaunchDaemons/${label}.plist"
-            if [[ -f "${plist}" ]]; then
-                launchctl bootout system "${plist}" 2>/dev/null || true
-                rm -f "${plist}"
-            fi
-        done
+_remove_service_linux() {
+    local svc="$1"
+    if systemctl is-active --quiet "${svc}" 2>/dev/null; then
+        systemctl stop "${svc}"
     fi
+    if systemctl is-enabled --quiet "${svc}" 2>/dev/null; then
+        systemctl disable "${svc}"
+    fi
+    if [[ -f "/etc/systemd/system/${svc}.service" ]]; then
+        rm -f "/etc/systemd/system/${svc}.service"
+        success "Removed service '${svc}'."
+    fi
+}
 
-    rm -rf "${INSTALL_DIR}"
-    rm -rf "${LOG_DIR}"
+_remove_service_macos() {
+    local label="$1"
+    local plist="/Library/LaunchDaemons/${label}.plist"
+    if [[ -f "${plist}" ]]; then
+        launchctl bootout system "${plist}" 2>/dev/null || true
+        rm -f "${plist}"
+        success "Removed service '${label}'."
+    fi
+}
 
-    # Remove service user and group
+_remove_user() {
     if [[ "${PLATFORM}" == "linux" ]]; then
         if id "${SERVICE_USER}" &>/dev/null; then
             userdel "${SERVICE_USER}"
@@ -573,6 +564,94 @@ uninstall() {
             success "Removed user '${SERVICE_USER}'."
         fi
     fi
+}
+
+_uninstall_server() {
+    info "Removing DDNS Server ..."
+    if [[ "${PLATFORM}" == "linux" ]]; then
+        _remove_service_linux "duacodie-server"
+        systemctl daemon-reload
+    else
+        _remove_service_macos "com.duacodie.server"
+    fi
+    rm -f "${BIN_DIR}/ddns-server"
+    rm -rf "${CONFIG_DIR}/duacodie/ddns"
+    rm -f "${LOG_DIR}/ddns-server.log" "${LOG_DIR}/ddns-server.err"
+    success "DDNS Server removed."
+}
+
+_uninstall_client() {
+    info "Removing DDNS Client ..."
+    if [[ "${PLATFORM}" == "linux" ]]; then
+        _remove_service_linux "duacodie-client"
+        systemctl daemon-reload
+    else
+        _remove_service_macos "com.duacodie.client"
+    fi
+    rm -f "${BIN_DIR}/ddns-client"
+    rm -rf "${CONFIG_DIR}/duacodie/ddns-client"
+    rm -f "${LOG_DIR}/ddns-client.log" "${LOG_DIR}/ddns-client.err"
+    success "DDNS Client removed."
+}
+
+_cleanup_shared() {
+    # Remove shared dirs only if both binaries are gone
+    local has_server has_client
+    has_server=$([[ -f "${BIN_DIR}/ddns-server" ]] && echo "1" || echo "")
+    has_client=$([[ -f "${BIN_DIR}/ddns-client" ]] && echo "1" || echo "")
+
+    if [[ -z "${has_server}" && -z "${has_client}" ]]; then
+        rm -rf "${INSTALL_DIR}"
+        rm -rf "${LOG_DIR}"
+        _remove_user
+        success "Removed shared directories and service user."
+    else
+        info "Shared directories kept (other component still installed)."
+    fi
+}
+
+# =============================================================================
+# UNINSTALLER
+# =============================================================================
+uninstall() {
+    bold "\n=== Uninstall DDNS Remake ==="
+    require_root
+    detect_platform
+
+    echo ""
+    echo "  What would you like to remove?"
+    echo ""
+    echo "  [1] Uninstall DDNS Server"
+    echo "  [2] Uninstall DDNS Client"
+    echo "  [3] Uninstall Both"
+    echo "  [4] Cancel"
+    echo ""
+    read -rp "  Select [1-4]: " CHOICE </dev/tty
+    echo ""
+
+    case "${CHOICE}" in
+        1)
+            read -rp "  Remove DDNS Server? [y/N]: " CONFIRM </dev/tty
+            [[ "${CONFIRM}" == "y" || "${CONFIRM}" == "Y" ]] || { info "Aborted."; return; }
+            _uninstall_server
+            _cleanup_shared
+            ;;
+        2)
+            read -rp "  Remove DDNS Client? [y/N]: " CONFIRM </dev/tty
+            [[ "${CONFIRM}" == "y" || "${CONFIRM}" == "Y" ]] || { info "Aborted."; return; }
+            _uninstall_client
+            _cleanup_shared
+            ;;
+        3)
+            read -rp "  Remove both Server and Client? [y/N]: " CONFIRM </dev/tty
+            [[ "${CONFIRM}" == "y" || "${CONFIRM}" == "Y" ]] || { info "Aborted."; return; }
+            _uninstall_server
+            _uninstall_client
+            _cleanup_shared
+            ;;
+        4) info "Cancelled."; return ;;
+        *) die "Invalid choice: ${CHOICE}" ;;
+    esac
 
     success "Uninstall complete."
 }
