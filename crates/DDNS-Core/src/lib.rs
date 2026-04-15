@@ -50,14 +50,13 @@ pub struct UpdateDnsRecordRequest {
     pub domains: Vec<String>,
 }
 
-#[derive(Debug, ToSchema, Serialize)]
-pub struct WebDomain{
+#[derive(Debug, ToSchema, Serialize, Deserialize)]
+pub struct WebDomain {
     pub hostname: String,
     pub current_ip: Option<String>,
 }
 
-
-#[derive(Debug, ToSchema, Serialize)]
+#[derive(Debug, ToSchema, Serialize, Deserialize)]
 pub struct GetDnsRecordsResponse {
     pub domains: Vec<WebDomain>,
 }

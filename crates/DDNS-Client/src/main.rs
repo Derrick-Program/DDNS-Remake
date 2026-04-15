@@ -3,7 +3,7 @@ use clap::{Parser, Subcommand};
 use tracing::info;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
-use ddns_client::client::{login, register_device};
+use ddns_client::client::{fetch_domains, login, register_device};
 use ddns_client::config::ClientConfig;
 use ddns_client::{daemon, get_public_ip};
 
@@ -130,13 +130,34 @@ async fn handle_login(server_arg: Option<String>, device_name_arg: Option<String
     let api_key = register_device(&server_url, &jwt, &device_name, &device_id).await?;
     println!("裝置註冊成功");
 
+    // 取得此裝置可更新的域名清單
+    let available_domains = fetch_domains(&server_url, &api_key, &device_id).await?;
+
+    let selected_domains = if available_domains.is_empty() {
+        println!("此裝置尚無已設定的域名，稍後可由伺服器管理員新增後重新設定。");
+        Vec::new()
+    } else {
+        let items: Vec<(&str, &str, bool)> = available_domains
+            .iter()
+            .map(|h| (h.as_str(), h.as_str(), true))
+            .collect();
+
+        cliclack::multiselect("選擇要讓此裝置更新的域名（空白鍵選取，Enter 確認）：")
+            .items(&items)
+            .interact()?
+            .into_iter()
+            .map(|s: &str| s.to_string())
+            .collect()
+    };
+
     let mut config = ClientConfig::load().unwrap_or_default();
     config.server_url = server_url;
     config.device_token = api_key;
+    config.domains = selected_domains;
     config.save()?;
 
     let path = ClientConfig::config_path();
-    println!("已將 device_token 寫入設定檔：{}", path.display());
+    println!("已將設定寫入：{}", path.display());
 
     Ok(())
 }

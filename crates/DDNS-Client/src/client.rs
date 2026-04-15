@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use ddns_core::{LoginRequest, RegisterDeviceRequest, UpdateDnsRecordRequest};
+use ddns_core::{GetDnsRecordsResponse, LoginRequest, RegisterDeviceRequest, UpdateDnsRecordRequest};
 use reqwest::Client;
 use std::net::Ipv4Addr;
 use tracing::info;
@@ -105,5 +105,32 @@ pub async fn register_device(
     } else {
         let body = resp.text().await.unwrap_or_default();
         Err(anyhow::anyhow!("裝置註冊失敗 {status}：{body}"))
+    }
+}
+
+/// 取得裝置可更新的域名清單
+pub async fn fetch_domains(
+    server_url: &str,
+    api_key: &str,
+    device_id: &str,
+) -> Result<Vec<String>> {
+    let http = Client::new();
+    let url = format!("{}/api/v1/dns_records/{}", server_url.trim_end_matches('/'), device_id);
+
+    let resp = http
+        .get(&url)
+        .bearer_auth(api_key)
+        .send()
+        .await
+        .with_context(|| format!("取得域名清單失敗：{url}"))?;
+
+    let status = resp.status();
+    if status.is_success() {
+        let data: GetDnsRecordsResponse =
+            resp.json().await.context("解析域名清單回應失敗")?;
+        Ok(data.domains.into_iter().map(|d| d.hostname).collect())
+    } else {
+        let body = resp.text().await.unwrap_or_default();
+        Err(anyhow::anyhow!("取得域名清單失敗 {status}：{body}"))
     }
 }
