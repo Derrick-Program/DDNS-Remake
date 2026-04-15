@@ -95,7 +95,6 @@ async fn main() -> Result<()> {
 }
 
 async fn handle_login(server_arg: Option<String>, device_name_arg: Option<String>) -> Result<()> {
-    // 決定 server_url：優先用 --server 參數，其次從設定檔讀取
     let server_url = match server_arg {
         Some(url) => url,
         None => {
@@ -105,17 +104,14 @@ async fn handle_login(server_arg: Option<String>, device_name_arg: Option<String
         }
     };
 
-    // 取得裝置名稱（預設使用主機名稱）
     let device_name = device_name_arg
         .or_else(|| hostname::get().ok()?.into_string().ok())
         .unwrap_or_else(|| "ddns-device".to_string());
 
-    // 取得裝置 UUID
     let device_id = ddns_core::get_device_id()
         .map_err(|e| anyhow::anyhow!(e))?
         .to_string();
 
-    // 提示輸入帳號密碼
     let username = {
         print!("使用者名稱：");
         use std::io::{Write, stdin, stdout};
@@ -126,17 +122,14 @@ async fn handle_login(server_arg: Option<String>, device_name_arg: Option<String
     };
     let password = rpassword::prompt_password("密碼：").context("無法讀取密碼")?;
 
-    // Step 1：登入取得 JWT
     println!("正在登入 {server_url} ...");
     let jwt = login(&server_url, &username, &password).await?;
     println!("登入成功");
 
-    // Step 2：註冊裝置取得 api_key
     println!("正在註冊裝置 \"{device_name}\" (device_id: {device_id}) ...");
     let api_key = register_device(&server_url, &jwt, &device_name, &device_id).await?;
     println!("裝置註冊成功");
 
-    // Step 3：寫入 config
     let mut config = ClientConfig::load().unwrap_or_default();
     config.server_url = server_url;
     config.device_token = api_key;
