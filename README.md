@@ -30,7 +30,117 @@ users (1) ──→ (N) devices (1) ──→ (N) domains
 - [just](https://github.com/casey/just) 任務執行器
 - SQLite
 
-## 快速開始
+## 安裝
+
+### Linux / macOS
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.sh | sudo bash
+```
+
+或下載後執行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.sh -o install.sh
+chmod +x install.sh
+sudo ./install.sh
+```
+
+安裝腳本啟動後會顯示互動式選單：
+
+```
+╔════════════════════════════════════╗
+║   DDNS Remake Installer vX.Y.Z    ║
+╚════════════════════════════════════╝
+
+  [1] Install DDNS Server
+  [2] Install DDNS Client
+  [3] Uninstall DDNS Remake
+  [4] Exit
+```
+
+安裝路徑：`/opt/duacodie/`  
+設定檔：`/opt/duacodie/config/duacodie/`  
+Service 使用者：`duacodie`（系統帳號，無登入權限）
+
+> 若需指定版本：`DDNS_VERSION=v0.1.1 sudo ./install.sh`
+
+**Server 安裝後**（Linux systemd）：
+
+```bash
+systemctl status duacodie-server
+journalctl -u duacodie-server -f
+```
+
+**Client 安裝後**（Linux systemd）：
+
+```bash
+systemctl status duacodie-client
+journalctl -u duacodie-client -f
+```
+
+**macOS**（launchd）：
+
+```bash
+launchctl list com.duacodie.server
+launchctl list com.duacodie.client
+tail -f /var/log/duacodie/ddns-server.log
+```
+
+### Windows
+
+以系統管理員身份開啟 PowerShell，執行：
+
+```powershell
+irm https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.ps1 | iex
+```
+
+或下載後執行：
+
+```powershell
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.ps1" -OutFile install.ps1
+.\install.ps1
+```
+
+安裝路徑：`C:\Program Files\DDNS\`  
+Windows 服務名稱：`DuacodieServer` / `DuacodieClient`
+
+```powershell
+# 查看服務狀態
+Get-Service DuacodieServer
+Get-Service DuacodieClient
+```
+
+> 若需指定版本：`$env:DDNS_VERSION = "v0.1.1"; .\install.ps1`
+
+### 解除安裝
+
+**Linux / macOS**：
+
+```bash
+sudo ./install.sh
+# 選擇 [3] Uninstall DDNS Remake
+```
+
+此操作會：
+- 停止並移除 systemd / launchd 服務
+- 刪除 `/opt/duacodie/` 及 `/var/log/duacodie/`（含資料庫與設定檔）
+
+**Windows**：
+
+```powershell
+.\install.ps1
+# 選擇 [3] Uninstall DDNS Remake
+```
+
+此操作會：
+- 停止並刪除 `DuacodieServer` / `DuacodieClient` 服務
+- 刪除 `C:\Program Files\DDNS\`
+- 從系統 PATH 移除安裝路徑
+
+---
+
+## 從原始碼建置
 
 ### 1. 設定環境變數
 
