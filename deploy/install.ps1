@@ -309,6 +309,7 @@ function Uninstall-All {
         return
     }
 
+    # Stop and remove services
     foreach ($svc in @("DuacodieServer", "DuacodieClient")) {
         $s = Get-Service -Name $svc -ErrorAction SilentlyContinue
         if ($s) {
@@ -318,15 +319,25 @@ function Uninstall-All {
         }
     }
 
+    # Remove install directory
     if (Test-Path $INSTALL_DIR) {
         Remove-Item -Recurse -Force $INSTALL_DIR
         Write-Ok "Removed $INSTALL_DIR"
     }
 
-    # Remove from PATH
+    # Remove from system PATH
     $currentPath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
     $newPath = ($currentPath -split ";" | Where-Object { $_ -ne $BIN_DIR }) -join ";"
     [System.Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
+    Write-Ok "Removed $BIN_DIR from PATH."
+
+    # Remove system environment variables set during install
+    foreach ($envVar in @("XDG_CONFIG_HOME", "DATABASE_URL")) {
+        if ([System.Environment]::GetEnvironmentVariable($envVar, "Machine")) {
+            [System.Environment]::SetEnvironmentVariable($envVar, $null, "Machine")
+            Write-Ok "Removed environment variable '$envVar'."
+        }
+    }
 
     Write-Ok "Uninstall complete."
 }

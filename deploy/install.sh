@@ -513,7 +513,23 @@ uninstall() {
     rm -rf "${INSTALL_DIR}"
     rm -rf "${LOG_DIR}"
 
-    warn "Config and data removed. Database at ${DATA_DIR} was also deleted."
+    # Remove service user and group
+    if [[ "${PLATFORM}" == "linux" ]]; then
+        if id "${SERVICE_USER}" &>/dev/null; then
+            userdel "${SERVICE_USER}"
+            success "Removed user '${SERVICE_USER}'."
+        fi
+        if getent group "${SERVICE_GROUP}" &>/dev/null; then
+            groupdel "${SERVICE_GROUP}" 2>/dev/null || true
+            success "Removed group '${SERVICE_GROUP}'."
+        fi
+    else
+        if dscl . -read "/Users/${SERVICE_USER}" &>/dev/null 2>&1; then
+            dscl . -delete "/Users/${SERVICE_USER}"
+            success "Removed user '${SERVICE_USER}'."
+        fi
+    fi
+
     success "Uninstall complete."
 }
 
