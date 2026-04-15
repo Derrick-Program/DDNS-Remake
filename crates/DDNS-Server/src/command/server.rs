@@ -140,19 +140,39 @@ pub fn remove_domain(domain_name: &str, ctx: &Arc<AppState>) -> Result<CommandRe
     Ok(CommandResult::Continue)
 }
 
-pub fn list_domains(ctx: &Arc<AppState>) -> Result<CommandResult> {
+pub fn list_domains(device_name: Option<&str>, ctx: &Arc<AppState>) -> Result<CommandResult> {
+    let mut db = ctx.db_service.clone();
     let mut table = Table::new();
     table
         .load_preset(UTF8_FULL)
         .apply_modifier(UTF8_ROUND_CORNERS)
         .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_width(40)
-        .set_header(vec!["Hostname"]);
-    let mut db = ctx.db_service.clone();
-    let all_domains = db.get_all_domains()?;
-    for domain in &all_domains {
-        table.add_row(vec![domain.to_string()]);
+        .set_width(60)
+        .set_header(vec!["Device", "Hostname", "Active"]);
+
+    match device_name {
+        Some(name) => {
+            let device = match db.find_device_by_name(name)? {
+                Some(d) => d,
+                None => {
+                    error!("Device '{}' not found", name);
+                    return Ok(CommandResult::Continue);
+                }
+            };
+            let domains = db.find_active_domains_by_device_id(device.id)?;
+            for domain in &domains {
+                table.add_row(vec![name, &domain.hostname, "active"]);
+            }
+            info!("裝置 '{}' 的域名列表\n{table}", name);
+        }
+        None => {
+            let rows = db.get_all_domains_with_device()?;
+            for (dev, host, active) in &rows {
+                table.add_row(vec![dev.as_str(), host.as_str(), if *active { "active" } else { "inactive" }]);
+            }
+            info!("顯示所有域名表格\n{table}");
+        }
     }
-    info!("顯示所有域名表格\n{table}");
+
     Ok(CommandResult::Continue)
 }

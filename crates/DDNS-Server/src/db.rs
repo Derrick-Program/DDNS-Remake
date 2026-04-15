@@ -152,6 +152,16 @@ impl DbService {
         Ok(all_domains)
     }
 
+    /// 取得所有域名及其所屬裝置名稱，回傳 (device_name, hostname, is_active)
+    pub fn get_all_domains_with_device(&mut self) -> Result<Vec<(String, String, bool)>> {
+        let mut conn = self.pool.get()?;
+        let rows = domains
+            .inner_join(devices)
+            .select((device_name, hostname, is_active))
+            .load::<(String, String, bool)>(&mut conn)?;
+        Ok(rows)
+    }
+
     pub fn delete_domain_by_hostname(&mut self, host: &str) -> Result<usize> {
         let mut conn = self.pool.get()?;
         let count =

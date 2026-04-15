@@ -154,8 +154,8 @@ pub async fn handle(cli: Cli, ctx: &Arc<AppState>) -> Result<CommandResult> {
                 ServerSubcommands::RemoveDomain { domain_name } => {
                     command::server::remove_domain(domain_name, ctx)?;
                 }
-                ServerSubcommands::ListDomains => {
-                    command::server::list_domains(ctx)?;
+                ServerSubcommands::ListDomains { device_name } => {
+                    command::server::list_domains(device_name.as_deref(), ctx)?;
                 }
                 ServerSubcommands::AddDevice { device_name, owner_username } => {
                     command::server::add_device(device_name, owner_username, ctx)?;

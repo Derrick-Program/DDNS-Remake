@@ -118,8 +118,12 @@ pub enum ServerSubcommands {
         #[arg(short = 'd', long)]
         device_name: String,
     },
-    /// 列出所有裝置綁定的域名
-    ListDomains,
+    /// 列出域名（不指定裝置則列出全部）
+    ListDomains {
+        /// 指定裝置名稱，只列出該裝置的域名
+        #[arg(short = 'd', long)]
+        device_name: Option<String>,
+    },
     /// 新增裝置綁定的域名
     AddDomain {
         #[arg(short = 'd', long)]
