@@ -145,6 +145,15 @@ impl AppConfig {
         self.zones.len() < before
     }
 
+    /// 檢查域名是否屬於已設定的 zone（精確相符或子域名皆允許）
+    pub fn is_domain_allowed(&self, domain: &str) -> bool {
+        let domain = domain.trim_end_matches('.');
+        self.zones.iter().any(|z| {
+            let zone = z.name.trim_end_matches('.');
+            domain == zone || domain.ends_with(&format!(".{}", zone))
+        })
+    }
+
     pub fn check(&self) -> Vec<String> {
         let mut warnings = Vec::new();
         if self.cloudflare.api_key.is_empty() {

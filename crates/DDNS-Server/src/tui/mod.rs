@@ -67,7 +67,6 @@ struct InputForm {
     password: Vec<bool>,
     focused: usize,
     title: &'static str,
-    /// Pre-selected values not shown in the form (e.g. device_name for domain add)
     context: Vec<String>,
 }
 
@@ -155,14 +154,13 @@ enum Screen {
         lines: Vec<String>,
     },
     AddForm(InputForm),
-    /// Step 1 of domain-add: pick a device from the list
     DomainDevicePick(ListPicker),
     DeletePick(ListPicker),
     Confirm {
         message: String,
         on_yes: Box<dyn FnOnce(&mut AppWrapper) -> String>,
     },
-    Message(String), // result / info popup
+    Message(String),
 }
 
 // ── App wrapper ─────────────────────────────────────────────────────────────
@@ -198,10 +196,7 @@ impl AppWrapper {
 // ── Key handling ─────────────────────────────────────────────────────────────
 
 fn handle_key(app: &mut AppWrapper, code: KeyCode) {
-    // We pop the current screen, operate, then push back or push new screen.
-    // Use take-and-replace to avoid borrow issues.
     let screen = app.screen_stack.pop().unwrap();
-
     match screen {
         Screen::MainMenu(mut state) => {
             let len = MainMenu::ALL.len();
@@ -251,16 +246,14 @@ fn handle_key(app: &mut AppWrapper, code: KeyCode) {
                     state.select(Some(i));
                     app.screen_stack.push(Screen::SubMenu { parent, state });
                 }
-                KeyCode::Esc => {
-                    // pop submenu, back to main
-                }
+                KeyCode::Esc => {}
                 KeyCode::Enter | KeyCode::Char(' ') => {
                     let action = state.selected().map(|i| SubAction::ALL[i].clone());
                     app.screen_stack.push(Screen::SubMenu { parent: parent.clone(), state });
                     if let Some(action) = action {
                         match action {
                             SubAction::Back => {
-                                app.pop(); // pop SubMenu
+                                app.pop();
                             }
                             SubAction::List => open_list(app, &parent),
                             SubAction::Add => open_add_form(app, &parent),
@@ -273,12 +266,11 @@ fn handle_key(app: &mut AppWrapper, code: KeyCode) {
         }
 
         Screen::ShowList { title, lines } => {
-            // any key → back
             let _ = (title, lines);
         }
 
         Screen::AddForm(mut form) => match code {
-            KeyCode::Esc => { /* pop, discard */ }
+            KeyCode::Esc => {}
             KeyCode::Tab | KeyCode::Down => {
                 form.next_field();
                 app.push(Screen::AddForm(form));
@@ -308,7 +300,7 @@ fn handle_key(app: &mut AppWrapper, code: KeyCode) {
         },
 
         Screen::DomainDevicePick(mut picker) => match code {
-            KeyCode::Esc => { /* pop */ }
+            KeyCode::Esc => {}
             KeyCode::Down | KeyCode::Char('j') => {
                 picker.next();
                 app.push(Screen::DomainDevicePick(picker));
@@ -344,7 +336,6 @@ fn handle_key(app: &mut AppWrapper, code: KeyCode) {
             KeyCode::Enter => {
                 if let Some(name) = picker.selected_item() {
                     let name = name.to_string();
-                    // figure out which tab this picker belongs to by peeking at SubMenu below
                     let tab = app.screen_stack.iter().rev().find_map(|s| {
                         if let Screen::SubMenu { parent, .. } = s {
                             Some(parent.clone())
@@ -377,7 +368,34 @@ fn handle_key(app: &mut AppWrapper, code: KeyCode) {
             _ => { /* pop confirm, discard */ }
         },
 
-        Screen::Message(_) => { /* any key → pop */ }
+        Screen::Message(_) => {
+            let should_refresh = matches!(app.screen_stack.last(), Some(Screen::DeletePick(_)));
+            if should_refresh {
+                let parent_opt = app.screen_stack.iter().rev().find_map(|s| {
+                    if let Screen::SubMenu { parent, .. } = s { Some(parent.clone()) } else { None }
+                });
+                if let Some(parent) = parent_opt {
+                    let mut db = app.db();
+                    let refresh = match &parent {
+                        MainMenu::Users => {
+                            Some(("選擇要刪除的使用者", db.get_all_users().unwrap_or_default()))
+                        }
+                        MainMenu::Devices => {
+                            Some(("選擇要刪除的裝置", db.get_all_devices().unwrap_or_default()))
+                        }
+                        MainMenu::Domains => {
+                            Some(("選擇要刪除的域名", db.get_all_domains().unwrap_or_default()))
+                        }
+                        MainMenu::Quit => None,
+                    };
+                    if let (Some((title, items)), Some(Screen::DeletePick(picker))) =
+                        (refresh, app.screen_stack.last_mut())
+                    {
+                        *picker = ListPicker::new(title, items);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -424,7 +442,6 @@ fn open_add_form(app: &mut AppWrapper, parent: &MainMenu) {
             )));
         }
         MainMenu::Domains => {
-            // Step 1: pick a device from the list
             let devices = app.db().get_all_devices().unwrap_or_default();
             if devices.is_empty() {
                 app.push(Screen::Message("目前沒有裝置，請先新增裝置".to_string()));
@@ -490,11 +507,22 @@ fn do_add(app: &AppWrapper, form: &InputForm) -> String {
             }
         }
         "新增域名" => {
-            // device_name comes from context (pre-selected), domain from v[0]
             let device_name = form.context.first().map(|s| s.as_str()).unwrap_or("").trim();
             let domain = v[0].trim();
             if device_name.is_empty() || domain.is_empty() {
                 return "錯誤：欄位不能為空".into();
+            }
+            if !app.ctx.config.is_domain_allowed(domain) {
+                let zones: Vec<&str> =
+                    app.ctx.config.zones.iter().map(|z| z.name.as_str()).collect();
+                if zones.is_empty() {
+                    return "錯誤：config 尚未設定任何 zone\n請先用 config zone-add 新增".to_string();
+                }
+                return format!(
+                    "錯誤：'{}' 不屬於任何已設定的 zone\n（{}）",
+                    domain,
+                    zones.join(", ")
+                );
             }
             match db.find_device_by_name(device_name).ok().flatten() {
                 None => format!("錯誤：裝置 '{}' 不存在", device_name),
@@ -534,37 +562,25 @@ fn do_delete(app: &mut AppWrapper, parent: &MainMenu, name: &str) -> String {
 
 fn render(f: &mut Frame, app: &mut AppWrapper) {
     let area = f.area();
-
-    // Background
     let bg = Block::default().style(Style::default().bg(Color::Blue));
     f.render_widget(bg, area);
-
-    // Title bar
     let title_bar = Paragraph::new(" DDNS Server 管理介面 ")
         .alignment(Alignment::Center)
         .style(Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD));
     let title_area = Rect { x: area.x, y: area.y, width: area.width, height: 1 };
     f.render_widget(title_bar, title_area);
-
-    // Hint bar at bottom
     let hint = Paragraph::new(" ↑↓/jk: 移動  Tab: 下一項  Enter: 選擇  Esc: 返回  q: 離開 ")
         .alignment(Alignment::Center)
         .style(Style::default().fg(Color::Black).bg(Color::Cyan));
     let hint_area = Rect { x: area.x, y: area.y + area.height - 1, width: area.width, height: 1 };
     f.render_widget(hint, hint_area);
-
-    // Main content area
     let content =
         Rect { x: area.x, y: area.y + 1, width: area.width, height: area.height.saturating_sub(2) };
-
-    // Render each screen layer in order (bottom-up)
     for screen in &app.screen_stack {
         if let Screen::MainMenu(state) = screen {
             render_main_menu(f, content, state)
         }
     }
-
-    // Only render the top screen as overlay if it's not MainMenu
     match app.screen_stack.last_mut().unwrap() {
         Screen::MainMenu(_) => {}
         Screen::SubMenu { parent, state } => render_sub_menu(f, content, parent, state),

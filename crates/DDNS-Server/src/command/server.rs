@@ -116,6 +116,19 @@ pub fn add_domain(
     domain_name: &str,
     ctx: &Arc<AppState>,
 ) -> Result<CommandResult> {
+    if !ctx.config.is_domain_allowed(domain_name) {
+        let zones: Vec<&str> = ctx.config.zones.iter().map(|z| z.name.as_str()).collect();
+        if zones.is_empty() {
+            error!("無法新增域名 '{}'：config 尚未設定任何 zone，請先用 config zone-add 新增", domain_name);
+        } else {
+            error!(
+                "無法新增域名 '{}'：不屬於任何已設定的 zone（{}）",
+                domain_name,
+                zones.join(", ")
+            );
+        }
+        return Ok(CommandResult::Continue);
+    }
     let mut db = ctx.db_service.clone();
     let device = match db.find_device_by_name(device_name)? {
         Some(d) => d,
