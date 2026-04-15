@@ -85,7 +85,7 @@ detect_platform() {
             PLATFORM="macos"
             case "${ARCH}" in
                 arm64)  ARCH_LABEL="arm64" ;;
-                x86_64) ARCH_LABEL="x64" ;;
+                x86_64) ARCH_LABEL="intel" ;;
                 *) die "Unsupported macOS architecture: ${ARCH}" ;;
             esac
             ;;
