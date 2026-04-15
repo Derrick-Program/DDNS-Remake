@@ -35,13 +35,15 @@ users (1) ──→ (N) devices (1) ──→ (N) domains
 ### Linux / macOS
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.sh?t=$(date +%s)" | sudo bash
+curl -fsSL -H "Cache-Control: no-cache" -H "Pragma: no-cache" \
+  "https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.sh" | sudo bash
 ```
 
 或下載後執行：
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.sh?t=$(date +%s)" -o install.sh
+curl -fsSL -H "Cache-Control: no-cache" -H "Pragma: no-cache" \
+  "https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.sh" -o install.sh
 chmod +x install.sh
 sudo ./install.sh
 ```
@@ -92,15 +94,15 @@ tail -f /var/log/duacodie/ddns-server.log
 以系統管理員身份開啟 PowerShell，執行：
 
 ```powershell
-$t = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
-irm "https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.ps1?t=$t" | iex
+irm -Headers @{"Cache-Control"="no-cache";"Pragma"="no-cache"} `
+  "https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.ps1" | iex
 ```
 
 或下載後執行：
 
 ```powershell
-$t = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.ps1?t=$t" -OutFile install.ps1
+Invoke-WebRequest -Headers @{"Cache-Control"="no-cache";"Pragma"="no-cache"} `
+  -Uri "https://raw.githubusercontent.com/Derrick-Program/DDNS-Remake/main/deploy/install.ps1" -OutFile install.ps1
 .\install.ps1
 ```
 
