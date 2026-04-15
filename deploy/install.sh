@@ -264,10 +264,11 @@ EOF
 _install_tui_wrapper() {
     local db_url="$1"
     local wrapper="/usr/local/bin/ddns-tui"
+    mkdir -p /usr/local/bin
     cat > "${wrapper}" <<EOF
 #!/usr/bin/env bash
 # ddns-tui — wrapper installed by DDNS Remake installer
-# Runs the server TUI as the ${SERVICE_USER} service user with correct env vars.
+# Run as root; switches to ${SERVICE_USER} with the correct environment.
 exec sudo -u "${SERVICE_USER}" \\
     env XDG_CONFIG_HOME="${CONFIG_DIR}" \\
         DATABASE_URL="${db_url}" \\
