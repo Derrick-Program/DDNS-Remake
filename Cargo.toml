@@ -7,7 +7,7 @@ name = "ddns-remake-workspace"
 
 [workspace.package]
 authors = ["Derrick Lin <dlin12457@gmail.com>"]
-version = "0.1.0"
+version = "0.1.2"
 edition = "2024"
 # repository = "https://github.com/user/project"
 # license = "MIT"

@@ -946,7 +946,7 @@ checksum = "d7a1e2f27636f116493b8b860f5546edb47c8d8f8ea73e1d2a20be88e28d1fea"
 
 [[package]]
 name = "ddns-client"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -979,7 +979,7 @@ dependencies = [
 
 [[package]]
 name = "ddns-server"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "argon2",
