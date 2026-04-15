@@ -146,13 +146,22 @@ impl ListPicker {
 
 enum Screen {
     MainMenu(ListState),
-    SubMenu { parent: MainMenu, state: ListState },
-    ShowList { title: String, lines: Vec<String> },
+    SubMenu {
+        parent: MainMenu,
+        state: ListState,
+    },
+    ShowList {
+        title: String,
+        lines: Vec<String>,
+    },
     AddForm(InputForm),
     /// Step 1 of domain-add: pick a device from the list
     DomainDevicePick(ListPicker),
     DeletePick(ListPicker),
-    Confirm { message: String, on_yes: Box<dyn FnOnce(&mut AppWrapper) -> String> },
+    Confirm {
+        message: String,
+        on_yes: Box<dyn FnOnce(&mut AppWrapper) -> String>,
+    },
     Message(String), // result / info popup
 }
 
@@ -312,8 +321,8 @@ fn handle_key(app: &mut AppWrapper, code: KeyCode) {
                 if let Some(device) = picker.selected_item() {
                     let device = device.to_string();
                     app.push(Screen::DomainDevicePick(picker));
-                    let form = InputForm::new("新增域名", &[("域名", false)])
-                        .with_context(vec![device]);
+                    let form =
+                        InputForm::new("新增域名", &[("域名", false)]).with_context(vec![device]);
                     app.push(Screen::AddForm(form));
                 } else {
                     app.push(Screen::DomainDevicePick(picker));
@@ -432,11 +441,7 @@ fn open_delete_pick(app: &mut AppWrapper, parent: &MainMenu) {
     let (title, items) = match parent {
         MainMenu::Users => ("選擇要刪除的使用者", db.get_all_users().unwrap_or_default()),
         MainMenu::Devices => ("選擇要刪除的裝置", db.get_all_devices().unwrap_or_default()),
-        MainMenu::Domains => (
-            "選擇要刪除的域名",
-            db.get_all_domains()
-                .unwrap_or_default(),
-        ),
+        MainMenu::Domains => ("選擇要刪除的域名", db.get_all_domains().unwrap_or_default()),
         MainMenu::Quit => return,
     };
     if items.is_empty() {
@@ -478,10 +483,9 @@ fn do_add(app: &AppWrapper, form: &InputForm) -> String {
             let token_hash = utils::hash_token(&api_key);
             let uuid = uuid::Uuid::new_v4();
             match db.create_device(owner, uuid, device_name.to_string(), token_hash) {
-                Ok(d) => format!(
-                    "已新增裝置 '{}'\n\nAPI Key（請妥善保存）:\n{}",
-                    d.device_name, api_key
-                ),
+                Ok(d) => {
+                    format!("已新增裝置 '{}'\n\nAPI Key（請妥善保存）:\n{}", d.device_name, api_key)
+                }
                 Err(e) => format!("錯誤：{e}"),
             }
         }
@@ -546,23 +550,17 @@ fn render(f: &mut Frame, app: &mut AppWrapper) {
     let hint = Paragraph::new(" ↑↓/jk: 移動  Tab: 下一項  Enter: 選擇  Esc: 返回  q: 離開 ")
         .alignment(Alignment::Center)
         .style(Style::default().fg(Color::Black).bg(Color::Cyan));
-    let hint_area =
-        Rect { x: area.x, y: area.y + area.height - 1, width: area.width, height: 1 };
+    let hint_area = Rect { x: area.x, y: area.y + area.height - 1, width: area.width, height: 1 };
     f.render_widget(hint, hint_area);
 
     // Main content area
-    let content = Rect {
-        x: area.x,
-        y: area.y + 1,
-        width: area.width,
-        height: area.height.saturating_sub(2),
-    };
+    let content =
+        Rect { x: area.x, y: area.y + 1, width: area.width, height: area.height.saturating_sub(2) };
 
     // Render each screen layer in order (bottom-up)
     for screen in &app.screen_stack {
-        match screen {
-            Screen::MainMenu(state) => render_main_menu(f, content, state),
-            _ => {}
+        if let Screen::MainMenu(state) = screen {
+            render_main_menu(f, content, state)
         }
     }
 
@@ -591,7 +589,12 @@ fn render_main_menu(f: &mut Frame, area: Rect, state: &ListState) {
 
     f.render_widget(Clear, menu_area);
     let list = List::new(items)
-        .block(Block::default().borders(Borders::ALL).title(" 主選單 ").title_alignment(Alignment::Center))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" 主選單 ")
+                .title_alignment(Alignment::Center),
+        )
         .style(Style::default().fg(Color::White).bg(Color::Black))
         .highlight_style(
             Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD),
@@ -618,7 +621,9 @@ fn render_sub_menu(f: &mut Frame, area: Rect, parent: &MainMenu, state: &ListSta
 
     f.render_widget(Clear, menu_area);
     let list = List::new(items)
-        .block(Block::default().borders(Borders::ALL).title(title).title_alignment(Alignment::Center))
+        .block(
+            Block::default().borders(Borders::ALL).title(title).title_alignment(Alignment::Center),
+        )
         .style(Style::default().fg(Color::White).bg(Color::Black))
         .highlight_style(
             Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD),
@@ -633,12 +638,11 @@ fn render_list_popup(f: &mut Frame, area: Rect, title: &str, lines: &[String]) {
 
     f.render_widget(Clear, popup);
 
-    let items: Vec<ListItem> =
-        if lines.is_empty() {
-            vec![ListItem::new(Span::styled("（無項目）", Style::default().fg(Color::DarkGray)))]
-        } else {
-            lines.iter().map(|l| ListItem::new(l.as_str())).collect()
-        };
+    let items: Vec<ListItem> = if lines.is_empty() {
+        vec![ListItem::new(Span::styled("（無項目）", Style::default().fg(Color::DarkGray)))]
+    } else {
+        lines.iter().map(|l| ListItem::new(l.as_str())).collect()
+    };
 
     let hint = " 按任意鍵返回 ";
     let block = Block::default()
@@ -675,8 +679,7 @@ fn render_add_form(f: &mut Frame, area: Rect, form: &InputForm) {
         height: popup.height.saturating_sub(2),
     };
 
-    let field_constraints: Vec<Constraint> =
-        (0..n).map(|_| Constraint::Length(3)).collect();
+    let field_constraints: Vec<Constraint> = (0..n).map(|_| Constraint::Length(3)).collect();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(field_constraints)
@@ -731,15 +734,14 @@ fn render_confirm(f: &mut Frame, area: Rect, message: &str) {
     let popup = centered_rect(w, h, area);
 
     f.render_widget(Clear, popup);
-    let para = Paragraph::new(format!("\n  {message}"))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" 確認 ")
-                .title_alignment(Alignment::Center)
-                .title_bottom(" Enter/y: 確認  其他鍵: 取消 ")
-                .style(Style::default().bg(Color::Black).fg(Color::Yellow)),
-        );
+    let para = Paragraph::new(format!("\n  {message}")).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(" 確認 ")
+            .title_alignment(Alignment::Center)
+            .title_bottom(" Enter/y: 確認  其他鍵: 取消 ")
+            .style(Style::default().bg(Color::Black).fg(Color::Yellow)),
+    );
     f.render_widget(para, popup);
 }
 
@@ -785,13 +787,13 @@ pub fn run_tui(ctx: Arc<AppState>) -> Result<()> {
     let result = (|| -> Result<()> {
         loop {
             terminal.draw(|f| render(f, &mut app))?;
-            if event::poll(std::time::Duration::from_millis(50))? {
-                if let Event::Key(key) = event::read()? {
-                    if key.kind != KeyEventKind::Press {
-                        continue;
-                    }
-                    handle_key(&mut app, key.code);
+            if event::poll(std::time::Duration::from_millis(50))?
+                && let Event::Key(key) = event::read()?
+            {
+                if key.kind != KeyEventKind::Press {
+                    continue;
                 }
+                handle_key(&mut app, key.code);
             }
             if app.should_quit {
                 break;
