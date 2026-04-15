@@ -247,14 +247,34 @@ EOF
     else
         _setup_launchd_server "${DB_PATH}"
     fi
+    # Install ddns-tui wrapper so admins can just run: sudo ddns-tui
+    _install_tui_wrapper "${DB_PATH}"
+
     echo ""
     success "DDNS Server installed successfully!"
     bold "\nNext steps:"
     echo "  1. Add a DNS zone:  ddns-server config zone-add <your-domain>"
     echo "  2. Add a user:      ddns-server server add-user -u <username>"
     echo "  3. Review config:   ${cfg_file}"
-    echo "  4. Check status:    $([ "${PLATFORM}" = "linux" ] && echo "systemctl status duacodie-server" || echo "launchctl list com.duacodie.server")"
+    echo "  4. Open TUI:        sudo ddns-tui"
+    echo "  5. Check status:    $([ "${PLATFORM}" = "linux" ] && echo "systemctl status duacodie-server" || echo "launchctl list com.duacodie.server")"
     warn "Note: JWT secret is auto-generated on each start. Tokens will be invalidated on restart."
+}
+
+_install_tui_wrapper() {
+    local db_url="$1"
+    local wrapper="/usr/local/bin/ddns-tui"
+    cat > "${wrapper}" <<EOF
+#!/usr/bin/env bash
+# ddns-tui — wrapper installed by DDNS Remake installer
+# Runs the server TUI as the ${SERVICE_USER} service user with correct env vars.
+exec sudo -u "${SERVICE_USER}" \\
+    env XDG_CONFIG_HOME="${CONFIG_DIR}" \\
+        DATABASE_URL="${db_url}" \\
+    "${BIN_DIR}/ddns-server" tui "\$@"
+EOF
+    chmod +x "${wrapper}"
+    success "TUI wrapper installed → ${wrapper}  (run: sudo ddns-tui)"
 }
 
 # ── systemd (Linux) ───────────────────────────────────────────────────────────
@@ -576,6 +596,7 @@ _uninstall_server() {
         _remove_service_macos "com.duacodie.server"
     fi
     rm -f "${BIN_DIR}/ddns-server"
+    rm -f "/usr/local/bin/ddns-tui"
     rm -rf "${CONFIG_DIR}/duacodie/ddns"
     rm -f "${LOG_DIR}/ddns-server.log" "${LOG_DIR}/ddns-server.err"
     success "DDNS Server removed."
