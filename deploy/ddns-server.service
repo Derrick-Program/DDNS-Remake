@@ -5,6 +5,10 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+User=duacodie
+Group=duacodie
+WorkingDirectory=/opt/duacodie
+EnvironmentFile=/opt/duacodie/.env
 ExecStart=/opt/duacodie/bin/ddns start
 Restart=on-failure
 RestartSec=10

@@ -3,6 +3,7 @@ migrate-config := "./crates/DDNS-Server/diesel.toml"
 migrate-db-url := "./crates/DDNS-Server/db/data.db"
 migrate-dir := "./crates/DDNS-Server/migrations"
 migrate-options := "--config-file " + migrate-config + " --database-url " + migrate-db-url + " --migration-dir " + migrate-dir
+export TAG := `git tag --sort=-creatordate | head -n 1 || echo "latest"`
 
 @default:
     @just --list
@@ -38,3 +39,19 @@ migrate-options := "--config-file " + migrate-config + " --database-url " + migr
 
 @clean:
     @cargo clean
+
+@show-latest-tag:
+    git tag --sort=-creatordate | head -n 1
+@show-all-tags:
+    git tag --sort=-creatordate
+
+@add-tag +args:
+    git tag {{args}} && git push origin {{args}}
+@check-tags:
+    @echo "Git Tag: {{TAG}}"
+@remove-tag tag:
+    @echo "正在刪除本地 Tag: {{tag}}..."
+    git tag -d {{tag}}
+    @echo "正在刪除遠端 Tag: {{tag}}..."
+    git push origin --delete {{tag}}
+    @echo "✅ Tag {{tag}} 已完全移除。"
