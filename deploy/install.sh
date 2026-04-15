@@ -154,13 +154,13 @@ prompt() {
     local value
 
     if [[ -n "${default}" ]]; then
-        read -rp "  ${msg} [${default}]: " value
+        read -rp "  ${msg} [${default}]: " value </dev/tty
         value="${value:-${default}}"
     else
-        read -rp "  ${msg}: " value
+        read -rp "  ${msg}: " value </dev/tty
         while [[ -z "${value}" ]]; do
             echo "  (Value cannot be empty)"
-            read -rp "  ${msg}: " value
+            read -rp "  ${msg}: " value </dev/tty
         done
     fi
     printf -v "${var}" '%s' "${value}"
@@ -486,7 +486,7 @@ uninstall() {
 
     detect_platform
 
-    read -rp "  This will remove all DDNS binaries and services. Continue? [y/N]: " CONFIRM
+    read -rp "  This will remove all DDNS binaries and services. Continue? [y/N]: " CONFIRM </dev/tty
     [[ "${CONFIRM}" == "y" || "${CONFIRM}" == "Y" ]] || { info "Aborted."; exit 0; }
 
     if [[ "${PLATFORM}" == "linux" ]]; then
@@ -536,7 +536,7 @@ main() {
     echo "  [3] Uninstall DDNS Remake"
     echo "  [4] Exit"
     echo ""
-    read -rp "  Select [1-4]: " CHOICE
+    read -rp "  Select [1-4]: " CHOICE </dev/tty
     echo ""
 
     case "${CHOICE}" in
