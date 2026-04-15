@@ -30,8 +30,10 @@ impl Default for ClientConfig {
 
 impl ClientConfig {
     pub fn config_path() -> PathBuf {
-        dirs::config_dir()
-            .unwrap_or_else(|| PathBuf::from("."))
+        // Respect XDG_CONFIG_HOME on all platforms (dirs::config_dir ignores it on macOS)
+        std::env::var("XDG_CONFIG_HOME")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| dirs::config_dir().unwrap_or_else(|| PathBuf::from(".")))
             .join("duacodie")
             .join("ddns-client")
             .join("config.toml")

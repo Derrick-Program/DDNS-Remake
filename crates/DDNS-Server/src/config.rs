@@ -39,8 +39,10 @@ pub struct CloudflareConfig {
 
 /// 獲取預設設定檔路徑
 pub fn default_config_path() -> PathBuf {
-    dirs::config_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
+    // Respect XDG_CONFIG_HOME on all platforms (dirs::config_dir ignores it on macOS)
+    std::env::var("XDG_CONFIG_HOME")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| dirs::config_dir().unwrap_or_else(|| PathBuf::from(".")))
         .join("duacodie")
         .join("ddns")
         .join("config.toml")
