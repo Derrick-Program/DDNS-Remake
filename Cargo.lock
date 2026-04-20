@@ -955,6 +955,7 @@ dependencies = [
  "ddns-core",
  "dirs",
  "hostname",
+ "openssl-sys",
  "public-ip-address",
  "reqwest 0.13.2",
  "rpassword",

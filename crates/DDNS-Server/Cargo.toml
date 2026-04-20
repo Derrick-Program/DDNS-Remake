@@ -23,7 +23,7 @@ diesel = { version = "2.3.7", features = [
     "uuid",
 ] }
 libsqlite3-sys = { version = "*", features = ["bundled"] }
-openssl-sys = {version = "*" , features = ["vendored"] }
+openssl-sys.workspace = true
 diesel_migrations = "2.3.1"
 dirs.workspace = true
 dotenvy.workspace = true
