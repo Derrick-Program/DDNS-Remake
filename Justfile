@@ -4,6 +4,7 @@ migrate-db-url := "./crates/DDNS-Server/db/data.db"
 migrate-dir := "./crates/DDNS-Server/migrations"
 migrate-options := "--config-file " + migrate-config + " --database-url " + migrate-db-url + " --migration-dir " + migrate-dir
 export TAG := `git tag --sort=-creatordate | head -n 1 || echo "latest"`
+export REGISTRY := "ghcr.io/derrick-program"
 
 @default:
     @just --list
@@ -82,6 +83,22 @@ export TAG := `git tag --sort=-creatordate | head -n 1 || echo "latest"`
 
 @docker-run-server: load-server
     docker run --rm -it ddns-server:{{TAG}}
-    
+
 @docker-run-client: load-client
     docker run --rm -it ddns-client:{{TAG}}
+
+@push-server: load-server
+    @echo "📤 推送 Server 鏡像到 GHCR..."
+    docker tag ddns-server:{{TAG}} {{REGISTRY}}/ddns-server:{{TAG}}
+    docker tag ddns-server:{{TAG}} {{REGISTRY}}/ddns-server:latest
+    docker push {{REGISTRY}}/ddns-server:{{TAG}}
+    docker push {{REGISTRY}}/ddns-server:latest
+    @echo "✅ Server 鏡像已推送到 {{REGISTRY}}/ddns-server"
+
+@push-client: load-client
+    @echo "📤 推送 Client 鏡像到 GHCR..."
+    docker tag ddns-client:{{TAG}} {{REGISTRY}}/ddns-client:{{TAG}}
+    docker tag ddns-client:{{TAG}} {{REGISTRY}}/ddns-client:latest
+    docker push {{REGISTRY}}/ddns-client:{{TAG}}
+    docker push {{REGISTRY}}/ddns-client:latest
+    @echo "✅ Client 鏡像已推送到 {{REGISTRY}}/ddns-client"
