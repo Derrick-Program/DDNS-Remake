@@ -102,6 +102,7 @@
           pkg,
           name,
           cmd,
+          port ? {},
         }:
           pkgs.dockerTools.buildLayeredImage {
             inherit name;
@@ -109,15 +110,18 @@
             created = "now";
             contents = [pkg pkgs.cacert pkgs.tzdata];
             config = {
+              WorkingDir = "/data";
               Entrypoint = ["${pkg}/bin/${pkg.pname}"];
               Cmd = cmd;
               Env = [
                 "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
                 "TZDIR=${pkgs.tzdata}/share/zoneinfo"
-                "DATABASE_URL=/data/ddns.db"
+                "DATABASE_URL=./ddns.db"
+                "TERM=xterm-256color"
+                "COLORTERM=truecolor"
               ];
               Volumes = {"/data" = {};};
-              # ExposedPorts = { "8080/tcp" = {}; };
+              ExposedPorts = port;
             };
           };
       in {
@@ -128,6 +132,7 @@
             pkg = ddns-server;
             name = "ddns-server";
             cmd = ["start" "-v"];
+            port = {"8698/tcp" = {};};
           };
           ddns-client-image = mkDockerImage {
             pkg = ddns-client;
