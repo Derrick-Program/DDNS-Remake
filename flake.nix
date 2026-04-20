@@ -117,6 +117,7 @@
                 "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
                 "TZDIR=${pkgs.tzdata}/share/zoneinfo"
                 "DATABASE_URL=./ddns.db"
+                "XDG_CONFIG_HOME=/data/config"
                 "TERM=xterm-256color"
                 "COLORTERM=truecolor"
               ];
