@@ -55,3 +55,30 @@ export TAG := `git tag --sort=-creatordate | head -n 1 || echo "latest"`
     @echo "正在刪除遠端 Tag: {{tag}}..."
     git push origin --delete {{tag}}
     @echo "✅ Tag {{tag}} 已完全移除。"
+
+@build-image-server:
+    nix build .#ddns-server-image
+    @echo "✅ 鏡像編譯完成：./result"
+
+@build-image-client:
+    nix build .#ddns-client-image
+    @echo "✅ 鏡像編譯完成：./result"
+
+@load-server:
+    @echo "🔨 Building Server Image via Nix..."
+    nix build .#ddns-server-image
+    @echo "🐋 Loading into Docker..."
+    docker load < result
+    @echo "🏷️ Tagging as {{TAG}}..."
+    docker tag ddns-server:latest ddns-server:{{TAG}}
+
+@load-client:
+    @echo "🔨 Building Client Image via Nix..."
+    nix build .#ddns-client-image
+    @echo "🐋 Loading into Docker..."
+    docker load < result
+    @echo "🏷️ Tagging as {{TAG}}..."
+    docker tag ddns-client:latest ddns-client:{{TAG}}
+
+@docker-run-server: load-server
+    docker run --rm -it ddns-server:{{TAG}}

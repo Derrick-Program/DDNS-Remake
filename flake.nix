@@ -41,7 +41,7 @@
         commonNativeBuildInputs = with pkgs; [
           pkg-config
           clang
-          # mold
+          perl
           stdenv.cc
         ];
 
@@ -90,16 +90,47 @@
           pname = "ddns-client";
           cargoExtraArgs = "-p ddns-client";
         };
+        mkDockerImage = {
+          pkg,
+          name,
+        }:
+          pkgs.dockerTools.buildLayeredImage {
+            inherit name;
+            tag = "latest";
+            created = "now";
+            contents = [pkg pkgs.cacert pkgs.tzdata];
+            config = {
+              Cmd = ["${pkg}/bin/${pkg.pname}"];
+              Env = [
+                "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+                "TZDIR=${pkgs.tzdata}/share/zoneinfo"
+                "DATABASE_URL=/data/ddns.db"
+              ];
+              Volumes = {"/data" = {};};
+              # ExposedPorts = { "8080/tcp" = {}; };
+            };
+          };
       in {
         packages = {
           default = ddns-server;
           inherit ddns-server ddns-client;
+          ddns-server-image = mkDockerImage {
+            pkg = ddns-server;
+            name = "ddns-server";
+          };
+          ddns-client-image = mkDockerImage {
+            pkg = ddns-client;
+            name = "ddns-client";
+          };
         };
 
         apps = rec {
           ddns-server = flake-utils.lib.mkApp {drv = self.packages.${system}.ddns-server;};
           ddns-client = flake-utils.lib.mkApp {drv = self.packages.${system}.ddns-client;};
-          just = { type = "app"; program = "${pkgs.just}/bin/just"; };
+          just = {
+            type = "app";
+            program = "${pkgs.just}/bin/just";
+          };
           default = ddns-server;
         };
         devShells.default = pkgs.mkShell {
