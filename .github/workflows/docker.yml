@@ -13,6 +13,9 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [ddns-server, ddns-client]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,7 +27,7 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@main
 
       - name: Build Server Image
-        run: nix build .#ddns-server-image
+        run: nix build .#${{ matrix.component }}-image
 
       - name: Log into GHCR
         uses: docker/login-action@v3
@@ -37,7 +40,7 @@ jobs:
         run: |
           docker load < result
 
-          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/ddns-server
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/${{ matrix.component }}
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
 
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
@@ -47,10 +50,10 @@ jobs:
           echo "IMAGE_ID=$IMAGE_ID"
           echo "VERSION=$VERSION"
 
-          docker tag ddns-server:latest $IMAGE_ID:$VERSION
+          docker tag ${{ matrix.component }}:latest $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
 
           if [ "$VERSION" != "latest" ]; then
-            docker tag ddns-server:latest $IMAGE_ID:latest
+            docker tag ${{ matrix.component }}:latest $IMAGE_ID:latest
             docker push $IMAGE_ID:latest
           fi
