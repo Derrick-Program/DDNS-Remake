@@ -82,3 +82,6 @@ export TAG := `git tag --sort=-creatordate | head -n 1 || echo "latest"`
 
 @docker-run-server: load-server
     docker run --rm -it ddns-server:{{TAG}}
+    
+@docker-run-client: load-client
+    docker run --rm -it ddns-client:{{TAG}}

@@ -62,7 +62,15 @@
           # OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
           # RUSTFLAGS = "-C link-arg=-fuse-ld=mold";
         };
-        src = craneLib.cleanCargoSource (craneLib.path ./.);
+        sqlFilter = path: type:
+          (lib.hasInfix "/migrations/" path)
+          || (lib.hasSuffix ".sql" path);
+        # src = craneLib.cleanCargoSource (craneLib.path ./.);
+        src = lib.cleanSourceWith {
+          src = craneLib.path ./.;
+          filter = path: type:
+            (sqlFilter path type) || (craneLib.filterCargoSources path type);
+        };
         cargoArtifacts = craneLib.buildDepsOnly (commonEnv
           // {
             inherit src;
@@ -93,6 +101,7 @@
         mkDockerImage = {
           pkg,
           name,
+          cmd,
         }:
           pkgs.dockerTools.buildLayeredImage {
             inherit name;
@@ -100,7 +109,8 @@
             created = "now";
             contents = [pkg pkgs.cacert pkgs.tzdata];
             config = {
-              Cmd = ["${pkg}/bin/${pkg.pname}"];
+              Entrypoint = ["${pkg}/bin/${pkg.pname}"];
+              Cmd = cmd;
               Env = [
                 "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
                 "TZDIR=${pkgs.tzdata}/share/zoneinfo"
@@ -117,10 +127,12 @@
           ddns-server-image = mkDockerImage {
             pkg = ddns-server;
             name = "ddns-server";
+            cmd = ["start" "-v"];
           };
           ddns-client-image = mkDockerImage {
             pkg = ddns-client;
             name = "ddns-client";
+            cmd = ["run"];
           };
         };
 
